@@ -16,20 +16,27 @@
 # Called by OWSlib but may be requried if if a proxy is required
 # No harm calling it early
 import urllib2
+# Requirement - OWSLib
+# This script was writen to use OD's for of OWSLib
+# > git clone https://github.com/open-data/OWSLib
+# > cd /location/you/cloned/into
+# > sudo python setup.py install
+from owslib.csw import CatalogueServiceWeb
+# Importing from a harvester.ini file
+import os.path
 
 # Connection variables
-csw_url        = 'csw.open.canada.ca/geonetwork/srv/csw'
-csw_user       = None
-csw_passwd     = None
+csw_url = 'csw.open.canada.ca/geonetwork/srv/csw'
+csw_user = None
+csw_passwd = None
 
 proxy_protocol = None
-proxy_url      = None
-proxy_user     = None
-proxy_passwd   = None
+proxy_url = None
+proxy_user = None
+proxy_passwd = None
 
 # Or read from a .ini file
 harvester_file = 'harvester.ini'
-import os.path
 if os.path.isfile(harvester_file):
     from ConfigParser import ConfigParser
 
@@ -37,14 +44,14 @@ if os.path.isfile(harvester_file):
 
     ini_config.read(harvester_file)
 
-    csw_url        = ini_config.get('csw', 'url')
-    csw_user       = ini_config.get('csw', 'username')
-    csw_passwd     = ini_config.get('csw', 'password')
+    csw_url = ini_config.get('csw', 'url')
+    csw_user = ini_config.get('csw', 'username')
+    csw_passwd = ini_config.get('csw', 'password')
 
     proxy_protocol = ini_config.get('proxy', 'protocol')
-    proxy_url      = ini_config.get('proxy', 'url')
-    proxy_user     = ini_config.get('proxy', 'username')
-    proxy_passwd   = ini_config.get('proxy', 'password')
+    proxy_url = ini_config.get('proxy', 'url')
+    proxy_user = ini_config.get('proxy', 'username')
+    proxy_passwd = ini_config.get('proxy', 'password')
 
 # If your supplying a proxy
 if proxy_url:
@@ -56,87 +63,109 @@ if proxy_url:
     # or even if your not
     else:
         proxy_auth_handler = urllib2.ProxyHandler({proxy_protocol: proxy_url})
-    
+
     opener = urllib2.build_opener(proxy_auth_handler)
     urllib2.install_opener(opener)
 
-# Requirement - OWSLib
-# This script was writen to use OD's for of OWSLib
-#> git clone https://github.com/open-data/OWSLib
-#> cd /location/you/cloned/into
-#> sudo python setup.py install
-from owslib.csw import CatalogueServiceWeb
-
 # Fetch the data
-#csw = CatalogueServiceWeb('http://csw_user:csw_pass@csw_url/geonetwork/srv/csw')
+# csw = CatalogueServiceWeb(
+#   'http://csw_user:csw_pass@csw_url/geonetwork/srv/csw')
 if csw_user and csw_passwd:
-    csw = CatalogueServiceWeb('http://'+csw_url, username=csw_user, password=csw_passwd, timeout=20)
+    csw = CatalogueServiceWeb(
+        'http://'+csw_url,
+        username=csw_user,
+        password=csw_passwd,
+        timeout=20)
 else:
     csw = CatalogueServiceWeb(csw_url, timeout=20)
 
 # Filter records into latest updates
 #
-# Sorry Tom K., we'll be more modern ASAWC.  For now it's good ol' Kitchen Sink.
-#from owslib.fes import PropertyIsGreaterThanOrEqualTo
-#modified = PropertyIsGreaterThanOrEqualTo('apiso:Modified', '2015-04-04')
-#csw.getrecords2(constraints=[modified])
+# Sorry Tom K., we'll be more modern ASAWC.  For now it's good ol' Kitchen Sink
+#
+# from owslib.fes import PropertyIsGreaterThanOrEqualTo
+# modified = PropertyIsGreaterThanOrEqualTo('apiso:Modified', '2015-04-04')
+# csw.getrecords2(constraints=[modified])
 #
 # Kitchen Sink is the valid HNAP, we need HNAP for R1 to debug issues
-# This filter was supplied by EC, the CSW service technical lead 
+# This filter was supplied by EC, the CSW service technical lead
 csw.getrecords2(format='xml', xml="""<?xml version="1.0"?>
-<csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" service="CSW" version="2.0.2"
-    resultType="results" outputSchema="csw:IsoRecord">
-    <csw:Query typeNames="gmd:MD_Metadata">
+<csw:GetRecords
+    xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+    service="CSW"
+    version="2.0.2"
+    resultType="results"
+    outputSchema="csw:IsoRecord">
+    <csw:Query
+        typeNames="gmd:MD_Metadata">
         <csw:ElementSetName>full</csw:ElementSetName>
-        <csw:Constraint version="1.1.0">
-            <Filter xmlns="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml"/>
+        <csw:Constraint
+            version="1.1.0">
+            <Filter
+                xmlns="http://www.opengis.net/ogc"
+                xmlns:gml="http://www.opengis.net/gml"/>
         </csw:Constraint>
     </csw:Query>
 </csw:GetRecords>
 """)
-
+ß
 # When we move to Tom K's filter we can use results in an R2 unified harvester
-#print csw.results
-#for rec in csw.records:
-#   print '* '+csw.records[rec].title
-# Till then we need to collect and dump the response from the CSW
+# print csw.results
+# for rec in csw.records:
+#    print '* '+csw.records[rec].title
+#  Till then we need to collect and dump the response from the CSW
 print csw.response
 
-##### END
+# #### END
 
-##### Storage
+# #### Storage
 # FGP supplied filters ( Apply "since X" when possible )
-# 
-#<csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" service="CSW" version="2.0.2" resultType="results" outputSchema="csw:IsoRecord">
-#	<csw:Query xmlns:gmd="http://www.isotc211.org/2005/gmd" typeNames="gmd:MD_Metadata">
-#		<csw:Constraint version="1.1.0">
-#			<Filter xmlns="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml">
-#				<PropertyIsGreaterThanOrEqualTo>
-#					<PropertyName>Modified</PropertyName>
-#					<Literal>2015-04-04</Literal>
-#				</PropertyIsGreaterThanOrEqualTo>
-#			</Filter>
-#		</csw:Constraint>
-#	</csw:Query>
-#</csw:GetRecords>
+# <csw:GetRecords
+#   xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+#   service="CSW" version="2.0.2"
+#   resultType="results"
+#   outputSchema="csw:IsoRecord">
+# 	<csw:Query
+#       xmlns:gmd="http://www.isotc211.org/2005/gmd"
+#       typeNames="gmd:MD_Metadata">
+# 		<csw:Constraint version="1.1.0">
+# 			<Filter
+#               xmlns="http://www.opengis.net/ogc"
+#               xmlns:gml="http://www.opengis.net/gml">
+# 				<PropertyIsGreaterThanOrEqualTo>
+# 					<PropertyName>Modified</PropertyName>
+# 					<Literal>2015-04-04</Literal>
+# 				</PropertyIsGreaterThanOrEqualTo>
+# 			</Filter>
+# 		</csw:Constraint>
+# 	</csw:Query>
+# </csw:GetRecords>
 #
-#<?xml version="1.0"?>
-#<csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" service="CSW" version="2.0.2"
-#    resultType="results" outputSchema="csw:IsoRecord">
-#    <csw:Query typeNames="gmd:MD_Metadata">
-#        <csw:Constraint version="1.1.0">
-#                <Filter xmlns="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml">             
-#                        <And>
-#                        <PropertyIsGreaterThanOrEqualTo>
-#                                <PropertyName>Modified</PropertyName>
-#                                <Literal>2015-04-04</Literal>
-#                        </PropertyIsGreaterThanOrEqualTo>
-#                        <PropertyIsLessThanOrEqualTo>
-#                                <PropertyName>Modified</PropertyName>
-#                                <Literal>2015-04-07T23:59:59</Literal>
-#                        </PropertyIsLessThanOrEqualTo>
-#                        </And>
+# <?xml version="1.0"?>
+# <csw:GetRecords
+#   xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+#   service="CSW"
+#   version="2.0.2"
+#   resultType="results"
+#   outputSchema="csw:IsoRecord">
+#   <csw:Query
+#       typeNames="gmd:MD_Metadata">
+#       <csw:Constraint
+#           version="1.1.0">
+#                <Filter
+#                   xmlns="http://www.opengis.net/ogc"
+#                   xmlns:gml="http://www.opengis.net/gml">
+#                <And>
+#                   <PropertyIsGreaterThanOrEqualTo>
+#                   <PropertyName>Modified</PropertyName>
+#                       <Literal>2015-04-04</Literal>
+#                   </PropertyIsGreaterThanOrEqualTo>
+#                   <PropertyIsLessThanOrEqualTo>
+#                   <PropertyName>Modified</PropertyName>
+#                       <Literal>2015-04-07T23:59:59</Literal>
+#                   </PropertyIsLessThanOrEqualTo>
+#                </And>
 #                </Filter>
 #        </csw:Constraint>
 #    </csw:Query>
-#</csw:GetRecords>
+# </csw:GetRecords>
