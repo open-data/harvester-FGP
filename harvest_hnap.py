@@ -108,7 +108,7 @@ csw.getrecords2(format='xml', xml="""<?xml version="1.0"?>
     </csw:Query>
 </csw:GetRecords>
 """)
-ß
+
 # When we move to Tom K's filter we can use results in an R2 unified harvester
 # print csw.results
 # for rec in csw.records:
