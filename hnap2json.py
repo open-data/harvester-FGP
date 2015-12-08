@@ -43,17 +43,16 @@ Either stream HNAP in or supply a file
     sys.exit()
 
 # records_root   = "/gmd:MD_Metadata"
-records_root = "/csw:GetRecordsResponse/"+
-"csw:SearchResults/"+
-"gmd:MD_Metadata"
+records_root = ("/csw:GetRecordsResponse/"
+                "csw:SearchResults/"
+                "gmd:MD_Metadata")
 
-source_hnap =
-"csw.open.canada.ca/"+
-"csw?service=CSW"+
-"&version=2.0.2"+
-"&request=GetRecordById"+
-"&outputSchema=csw:IsoRecord"+
-"&id="
+source_hnap = ("csw.open.canada.ca/"
+               "csw?service=CSW"
+               "&version=2.0.2"
+               "&request=GetRecordById"
+               "&outputSchema=csw:IsoRecord"
+               "&id=")
 
 iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
 
@@ -153,9 +152,9 @@ def sanityFirst(values):
 def sanityDate(pre, date_text):
     value = ''
     try:
-        value = datetime.datetime.
-        strptime(date_text, '%Y-%m-%d').isoformat().
-        split('T')[0]
+        value = datetime.datetime.strptime(
+            date_text,
+            '%Y-%m-%d').isoformat().split('T')[0]
     except ValueError:
         reportError(pre + ',date is not valid,"' + date_text + '"')
         return False
@@ -167,7 +166,7 @@ def sanityDate(pre, date_text):
 
 # Mask dates to make sure they resolve to the day
 def maskDate(date):
-    # default_date =
+    # default_date =\
     if len(date) >= 10:
         return date
     return date + ('xxxx-01-01'[-10 + len(date):])
@@ -205,8 +204,8 @@ def main():
                 CKAN_secondary_lang = 'en'
                 OGDMES_primary_lang = 'French'
                 OGDMES_secondary_lang = 'English'
-            debug_output['00-HNAP RECORD PRIMARY LANGUAGE'] =
-            HNAP_primary_language
+            debug_output['00-HNAP RECORD PRIMARY LANGUAGE'] =\
+                HNAP_primary_language
 
         # #### OGDMES-01 fileIdentifier
         ##################################################
@@ -244,8 +243,8 @@ def main():
         # use this math derived shortkey.
         OGDMES_property = 'shortKey'
         json_record['name'] = OGDMES_fileIdentifier[0:8]
-        debug_output['02-OGDMES shortKey [calculated]'] =
-        OGDMES_fileIdentifier[0:8]
+        debug_output['02-OGDMES shortKey [calculated]'] =\
+            OGDMES_fileIdentifier[0:8]
 
         # #### OGDMES-03 metadataRecordLanguage
         ##################################################
@@ -255,8 +254,8 @@ def main():
         OGDMES_property = 'metadataRecordLanguage'
         # Ian Ward @ CKAN:disable
         # json_record[OGDMES_property] = HNAP_primary_language
-        debug_output['03-OGDMES metadataRecordLanguage'] =
-        HNAP_primary_language
+        debug_output['03-OGDMES metadataRecordLanguage'] =\
+            HNAP_primary_language
 
         # #### OGDMES-04 characterSet
         ##################################################
@@ -272,8 +271,8 @@ def main():
                     tmp):
                 # Ian Ward @ CKAN:disable
                 # json_record[OGDMES_property] = sanityFirst(tmp).split(';')[0]
-                debug_output['04-OGDMES characterSet'] =
-                sanityFirst(tmp).split(';')[0]
+                debug_output['04-OGDMES characterSet'] =\
+                    sanityFirst(tmp).split(';')[0]
 
         # #### OGDMES-05 parentIdentifier
         ##################################################
@@ -299,8 +298,8 @@ def main():
                     tmp):
                 (primary, secondary) = sanityFirst(tmp).strip().split(';')
                 json_record['hierarchy_level'] = primary.strip()
-                debug_output['06-OGDMES hierarchyLevel'] =
-                json_record['hierarchy_level']
+                debug_output['06-OGDMES hierarchyLevel'] =\
+                    json_record['hierarchy_level']
 
         # #### OGDMES-07 metadataContact
         ##################################################
@@ -461,12 +460,12 @@ def main():
 
         debug_output[
             '07-OGDMES metadataContact' +
-            OGDMES_primary_lang] =
-        json_record['metadata_contact'][CKAN_primary_lang]
+            OGDMES_primary_lang] =\
+            json_record['metadata_contact'][CKAN_primary_lang]
         debug_output[
             '07-OGDMES metadataContact' +
-            OGDMES_secondary_lang] =
-        json_record['metadata_contact'][CKAN_secondary_lang]
+            OGDMES_secondary_lang] =\
+            json_record['metadata_contact'][CKAN_secondary_lang]
 
         # OGDMES-08 metadataRecordDateStamp
         ##################################################
@@ -500,18 +499,18 @@ def main():
         # OGDMES-09 metadataStandardName
         ##################################################
         # Ian Ward @ CKAN:disable:json_record['metadataStandardName'] = {}
-        # Ian Ward @ CKAN:disable:json_record['metadataStandardName']['en'] =
+        # Ian Ward @ CKAN:disable:json_record['metadataStandardName']['en'] =\
         # 'Government of Canada’s Open Geospatial Data Metadata Element Set'
-        # Ian Ward @ CKAN:disable:json_record['metadataStandardName']['fr'] =
+        # Ian Ward @ CKAN:disable:json_record['metadataStandardName']['fr'] =\
         # """Données ouvertes géospatiales du gouvernement du Canada – Ensemble
         # d’éléments de métadonnées"""
         debug_output[
-            '09-OGDMES metadataStandardNameEnglish'] =
-        'Government of Canada’s Open Geospatial Data Metadata Element Set'
+            '09-OGDMES metadataStandardNameEnglish'] = (
+            'Government of Canada’s Open Geospatial Data Metadata Element Set')
         debug_output[
-            '09-OGDMES metadataStandardNameFrench'] =
-        "Données ouvertes géospatiales du gouvernement du Canada – "+
-        "Ensemble d’éléments de métadonnées"
+            '09-OGDMES metadataStandardNameFrench'] = (
+            "Données ouvertes géospatiales du gouvernement du Canada – "
+            "Ensemble d’éléments de métadonnées")
 
         # OGDMES-10 metadataURI
         ##################################################
@@ -528,11 +527,11 @@ def main():
 
         if tmp is not None and len(tmp) > 0:
             # Ian Ward @ CKAN:disable:
-            # json_record[OGDMES_property][CKAN_primary_lang] =
+            # json_record[OGDMES_property][CKAN_primary_lang] =\
             # ','.join(primary_vals)
             # Ian Ward @
             # CKAN:disable:
-            # json_record[OGDMES_property][CKAN_secondary_lang] =
+            # json_record[OGDMES_property][CKAN_secondary_lang] =\
             # ','.join(second_vals)
             debug_output['11-OGDMES locale'] = tmp[0]
         else:
@@ -562,8 +561,8 @@ def main():
                     CKAN_primary_lang] = sanityFirst(tmp)
                 debug_output[
                     '12-OGDMES title' +
-                    OGDMES_primary_lang] =
-                json_record[OGDMES_property][CKAN_primary_lang]
+                    OGDMES_primary_lang] =\
+                    json_record[OGDMES_property][CKAN_primary_lang]
 
         tmp = fetchXMLValues(
             record,
@@ -586,8 +585,8 @@ def main():
                     CKAN_secondary_lang] = sanityFirst(tmp)
                 debug_output[
                     '12-OGDMES title' +
-                    OGDMES_secondary_lang] =
-                json_record[OGDMES_property][CKAN_secondary_lang]
+                    OGDMES_secondary_lang] =\
+                    json_record[OGDMES_property][CKAN_secondary_lang]
 
         # OGDMES-13 dateContributed
         ##################################################
@@ -641,8 +640,8 @@ def main():
                                 maskDate(inVal)):
                             json_record['date_published'] = maskDate(inVal)
                             debug_output[
-                                '14-OGDMES date_published'] =
-                            json_record['date_published']
+                                '14-OGDMES date_published'] =\
+                                json_record['date_published']
                             break
 
                     if input_type == u'revision' or input_type == u'révision':
@@ -652,8 +651,8 @@ def main():
                                 maskDate(inVal)):
                             json_record['date_modified'] = maskDate(inVal)
                             debug_output[
-                                '15-OGDMES date_modified'] =
-                            json_record['date_modified']
+                                '15-OGDMES date_modified'] =\
+                                json_record['date_modified']
                             break
 
         if 'date_published' not in json_record:
@@ -766,8 +765,10 @@ def main():
                         CKAN_primary_lang] = ','.join(primary_vals)
                     debug_output[
                         '18-OGDMES organisationName' +
-                        OGDMES_primary_lang] =
-                    json_record['responsible_organization'][CKAN_primary_lang]
+                        OGDMES_primary_lang] =\
+                        json_record[
+                            'responsible_organization'
+                            ][CKAN_primary_lang]
 
         tmp = fetchXMLValues(
             record,
@@ -819,8 +820,8 @@ def main():
                         CKAN_secondary_lang] = ','.join(second_vals)
                     debug_output[
                         '18-OGDMES organisationName' +
-                        OGDMES_secondary_lang] =
-                    json_record['responsible_organization']
+                        OGDMES_secondary_lang] =\
+                        json_record['responsible_organization']
                     [CKAN_secondary_lang]
 
         # OGDMES-19 positionName
@@ -837,8 +838,8 @@ def main():
             json_record['position_name'][CKAN_primary_lang] = sanityFirst(tmp)
             debug_output[
                 '19-OGDMES positionName' +
-                OGDMES_primary_lang] =
-            json_record['position_name'][CKAN_primary_lang]
+                OGDMES_primary_lang] =\
+                json_record['position_name'][CKAN_primary_lang]
         else:
             debug_output[
                 '19-OGDMES positionName' +
@@ -857,8 +858,8 @@ def main():
                 CKAN_secondary_lang] = sanityFirst(tmp)
             debug_output[
                 '19-OGDMES positionName' +
-                OGDMES_secondary_lang] =
-            json_record['position_name'][CKAN_secondary_lang]
+                OGDMES_secondary_lang] =\
+                json_record['position_name'][CKAN_secondary_lang]
         else:
             debug_output[
                 '19-OGDMES positionName' +
@@ -1197,8 +1198,8 @@ def main():
                         termsValue):
                     json_record['responsible_role'] = termsValue[0]
                     debug_output[
-                        '21-OGDMES responsible_role'] =
-                    json_record['responsible_role']
+                        '21-OGDMES responsible_role'] =\
+                        json_record['responsible_role']
 
         # OGDMES-22 abstract
         ##################################################
@@ -1221,8 +1222,8 @@ def main():
                 json_record['notes'][CKAN_primary_lang] = sanityFirst(tmp)
                 debug_output[
                     '22-OGDMES abstract' +
-                    OGDMES_primary_lang] =
-                json_record['notes'][CKAN_primary_lang]
+                    OGDMES_primary_lang] =\
+                    json_record['notes'][CKAN_primary_lang]
 
         tmp = fetchXMLValues(
             record,
@@ -1242,8 +1243,8 @@ def main():
                 json_record['notes'][CKAN_secondary_lang] = sanityFirst(tmp)
                 debug_output[
                     '22-OGDMES abstract' +
-                    OGDMES_secondary_lang] =
-                json_record['notes'][CKAN_secondary_lang]
+                    OGDMES_secondary_lang] =\
+                    json_record['notes'][CKAN_secondary_lang]
 
         # OGDMES-23 descriptiveKeywords
         ##################################################
@@ -1398,16 +1399,16 @@ def main():
         aggregateDataSetIdentifier_array = []
         if tmp is not None and len(tmp) > 0:
             for aggregateDataSetIdentifier in tmp:
-                (primary, secondary) =
-                aggregateDataSetIdentifier.strip().split(';')
+                (primary, secondary) =\
+                    aggregateDataSetIdentifier.strip().split(';')
                 aggregateDataSetIdentifier_array.append(primary.strip())
                 aggregateDataSetIdentifier_array.append(secondary.strip())
 
         json_record['aggregate_identifier'] = ','.join(
             aggregateDataSetIdentifier_array)
         debug_output[
-            '26-OGDMES aggregateDataSetIdentifier'] =
-        json_record['aggregate_identifier']
+            '26-OGDMES aggregateDataSetIdentifier'] =\
+            json_record['aggregate_identifier']
 
         # OGDMES-27 spatialRepresentationType
         ##################################################
@@ -1440,8 +1441,8 @@ def main():
                         termsValue):
                     json_record[OGDMES_property] = termsValue[0]
                     debug_output[
-                        '27-OGDMES spatialRepresentationType'] =
-                    json_record[OGDMES_property]
+                        '27-OGDMES spatialRepresentationType'] =\
+                        json_record[OGDMES_property]
                 if sanityMandatory(
                         OGDMES_fileIdentifier +
                         ',' +
@@ -1452,8 +1453,8 @@ def main():
         json_record['spatial_representation_type'] = ','.join(
             spatialRepresentationType_array)
         debug_output[
-            '27-OGDMES spatialRepresentationType'] =
-        json_record['spatial_representation_type']
+            '27-OGDMES spatialRepresentationType'] =\
+            json_record['spatial_representation_type']
 
         # OGDMES-28 topicCategory
         ##################################################
@@ -1595,7 +1596,7 @@ def main():
         ]]
 
         json_record['spatial'] = GeoJSON
-        # debug_output['32-OGDMES temporalElement'] =
+        # debug_output['32-OGDMES temporalElement'] =\
         # json_record['westBoundingLongitude']+',' +
         # json_record['eastBoundingLongitude']+',' +
         # json_record['northBoundingLongitude']+',' +
@@ -1718,17 +1719,18 @@ def main():
                         termsValue):
                     json_record['frequency'] = termsValue[0]
                     debug_output[
-                        '34-OGDMES maintenanceAndUpdateFrequency'] =
-                    json_record['frequency']
+                        '34-OGDMES maintenanceAndUpdateFrequency'] =\
+                        json_record['frequency']
 
         # OGDMES-35 licence_id
         ##################################################
         OGDMES_property = 'licence_id'
         json_record['license_id'] = 'ca-ogl-lgo'
         debug_output[
-            '35-OGDMES Licence'] =
-        "Open Government Licence – Canada " +
-        "<linkto: http://open.canada.ca/en/open-government-licence-canada>"
+            '35-OGDMES Licence'] = (
+            "Open Government Licence – Canada "
+            "<linkto: http://open.canada.ca/en/open-government-licence-canada>"
+            )
 
         data_constraints = fetchXMLArray(
             record,
@@ -1770,9 +1772,11 @@ def main():
                         OGDMES_property,
                         tmp):
                     if sanityFirst(tmp).strip(
-                    ) !=
-                    'Open Government Licence - Canada ('+
-                    'http://open.canada.ca/en/open-government-licence-canada)':
+                    ) != (
+                            'Open Government Licence - Canada '
+                            '(http://open.canada.ca/en/'
+                            'open-government-licence-canada)'
+                    ):
                         reportError(
                             OGDMES_fileIdentifier +
                             ',' +
@@ -1792,10 +1796,11 @@ def main():
                         OGDMES_property,
                         tmp):
                     if sanityFirst(tmp).strip(
-                    ) !=
-                    'Licence du gouvernement ouvert - Canada '+
-                    '(http://ouvert.canada.ca/fr/'+
-                    'licence-du-gouvernement-ouvert-canada)':
+                    ) != (
+                        'Licence du gouvernement ouvert - Canada '
+                        '(http://ouvert.canada.ca/fr/'
+                        'licence-du-gouvernement-ouvert-canada)'
+                    ):
                         reportError(
                             OGDMES_fileIdentifier +
                             ',' +
@@ -1848,8 +1853,8 @@ def main():
             valc = tmp[0]
         json_record['reference_system'] = vala + ',' + valb + ',' + valc
         debug_output[
-            '36-OGDMES referenceSystemInformation'] =
-        json_record['reference_system']
+            '36-OGDMES referenceSystemInformation'] =\
+            json_record['reference_system']
 
         # OGDMES-37 distributor
         ##################################################
@@ -2211,12 +2216,12 @@ def main():
 
         debug_output[
             '37-OGDMES distributor' +
-            OGDMES_primary_lang] =
-        json_record['distributor'][CKAN_primary_lang]
+            OGDMES_primary_lang] =\
+            json_record['distributor'][CKAN_primary_lang]
         debug_output[
             '37-OGDMES distributor' +
-            OGDMES_secondary_lang] =
-        json_record['distributor'][CKAN_secondary_lang]
+            OGDMES_secondary_lang] =\
+            json_record['distributor'][CKAN_secondary_lang]
 
         # OGDMES-38 CatalogueType
         ##################################################
@@ -2471,7 +2476,7 @@ def main():
     #    for error in error_output:
     #        print error
     # output = codecs.open(output_json, 'w', 'utf-8')
-    # utf_8_output =
+    # utf_8_output =\
     # json.dumps(
     #     json_records,
     #     sort_keys=False,
@@ -2483,7 +2488,7 @@ def main():
     # Write JSON Lines to files
     # output = codecs.open(output_jl, 'w', 'utf-8')
     # for json_record in json_records:
-    #     utf_8_output =
+    #     utf_8_output =\
     #     json.dumps(json_record, ensure_ascii=False, encoding='utf8')
     #     output.write(utf_8_output+"\n")
     # output.close()
