@@ -51,8 +51,9 @@ if os.path.isfile(harvester_file):
 
     proxy_protocol = ini_config.get('proxy', 'protocol')
     proxy_url = ini_config.get('proxy', 'url')
-    proxy_user = ini_config.get('proxy', 'username')
-    proxy_passwd = ini_config.get('proxy', 'password')
+    if ini_config.has_option('proxy', 'username'):
+        proxy_user = ini_config.get('proxy', 'username')
+        proxy_passwd = ini_config.get('proxy', 'password')
 
 # If your supplying a proxy
 if proxy_url:
