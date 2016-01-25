@@ -45,8 +45,9 @@ if os.path.isfile(harvester_file):
     ini_config.read(harvester_file)
 
     csw_url = ini_config.get('csw', 'url')
-    csw_user = ini_config.get('csw', 'username')
-    csw_passwd = ini_config.get('csw', 'password')
+    if ini_config.has_option('csw', 'username'):
+        csw_user = ini_config.get('csw', 'username')
+        csw_passwd = ini_config.get('csw', 'password')
 
     proxy_protocol = ini_config.get('proxy', 'protocol')
     proxy_url = ini_config.get('proxy', 'url')
@@ -77,7 +78,7 @@ if csw_user and csw_passwd:
         password=csw_passwd,
         timeout=20)
 else:
-    csw = CatalogueServiceWeb(csw_url, timeout=20)
+    csw = CatalogueServiceWeb('http://'+csw_url, timeout=20)
 
 # Filter records into latest updates
 #
