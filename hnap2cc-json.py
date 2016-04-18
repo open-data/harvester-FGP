@@ -47,7 +47,7 @@ Either stream HNAP in or supply a file
 
 ##################################################
 # Extract the schema to convert to
-schema_file = 'Schema--GC.OGS.TBS-CommonCore-OpenMaps.csv'
+schema_file = 'config/Schema--GC.OGS.TBS-CommonCore-OpenMaps.csv'
 schema_ref = {}
 with open(schema_file, 'rb') as f:
     reader = csv.reader(f)

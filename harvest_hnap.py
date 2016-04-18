@@ -36,7 +36,7 @@ proxy_user = None
 proxy_passwd = None
 
 # Or read from a .ini file
-harvester_file = 'harvester.ini'
+harvester_file = 'config/harvester.ini'
 if os.path.isfile(harvester_file):
     from ConfigParser import ConfigParser
 
