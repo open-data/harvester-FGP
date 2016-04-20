@@ -4,7 +4,7 @@ The Open Government Secretariat's (OGS) Open Maps (OM) harvester pulling from th
 ![Harvester - FGP - Diagram](https://raw.githubusercontent.com/open-data/harvester-FGP/master/docs/Harvest%20Diagram.png)
 
 ## harvest_hnap.py
-Extract HNAP XML from the CSW source.  Prints xml out to be piped to another command or to a file.
+Extract *HNAP* XML from the CSW source.  Prints xml out to be piped to another command or to a file.
 
 ```
 ./harvest_hnap.py > hnap.xml
@@ -16,15 +16,15 @@ Presently extracts everything but will eventually extract a window of data (e.g.
 
 This process runs in a few seconds depending on network latency.
 
-## hnap2ogdmes.py
-Converts HNAP XML file to an OGDMES mapped CKAN compliant JSON Lines file.  Accepts streamed in or file path as an argument and prints out JSON Lines output.
+## hnap2cc-json.py
+Converts *HNAP* XML file to a *Common Core* mapped CKAN compliant JSON Lines file.  Accepts streamed in or file path as an argument and prints out JSON Lines output.
 
 ```
-./harvest_hnap.py | ./hnap2json.py > OGDMES_CKAN.jsonl
+./harvest_hnap.py | ./hnap2json.py > CommonCore_CKAN.jsonl
 or
-cat hnap.xml | ./hnap2json.py > OGDMES_CKAN.jsonl
+cat hnap.xml | ./hnap2json.py > CommonCore_CKAN.jsonl
 or
-./hnap2json.py hnap.xml > OGDMES_CKAN.jsonl 
+./hnap2json.py hnap.xml > CommonCore_CKAN.jsonl 
 ```
 
 This process runs in a couple seconds.
@@ -33,7 +33,7 @@ This process runs in a couple seconds.
 Uploading the JSON Lines file has been tested with the [ckanapi CLI](https://github.com/ckan/ckanapi)
 
 ```
-ckanapi load datasets -I OGDMES_CKAN.jsonl -r http://target.ckan.instance.ca/ -a <user api key>
+ckanapi load datasets -I CommonCore_CKAN.jsonl -r http://target.ckan.instance.ca/ -a <user api key>
 ```
 
 This process runs, depending on how much data is being pushed, in under 20 seconds.

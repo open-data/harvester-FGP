@@ -15,6 +15,7 @@ import sys
 from io import StringIO, BytesIO
 import time
 import re
+import codecs
 
 ##################################################
 # TL err/dbg
@@ -28,6 +29,7 @@ debug_output = {}
 # input_file     = 'data/majechr_source.xml'
 # input_file     = 'data/hnap_import.xml'
 input_file = None
+output_jl = "harvested_records.jl"
 
 # Use stdin if it's populated
 if not sys.stdin.isatty():
@@ -47,7 +49,7 @@ Either stream HNAP in or supply a file
 
 ##################################################
 # Extract the schema to convert to
-schema_file = 'Schema--GC.OGS.TBS-CommonCore-OpenMaps.csv'
+schema_file = 'config/Schema--GC.OGS.TBS-CommonCore-OpenMaps.csv'
 schema_ref = {}
 with open(schema_file, 'rb') as f:
     reader = csv.reader(f)
@@ -1196,17 +1198,17 @@ def main():
 
 
     # Write JSON Lines to files
-    #output = codecs.open(output_jl, 'w', 'utf-8')
+    output = codecs.open(output_jl, 'w', 'utf-8')
     for json_record in json_records:
         utf_8_output =\
         json.dumps(
             json_record,
-            sort_keys=True,
-            indent=4,
+            #sort_keys=True,
+            #indent=4,
             ensure_ascii=False,
             encoding='utf8')
-        print utf_8_output
-    #    output.write(utf_8_output+"\n")
+        #print utf_8_output
+        output.write(utf_8_output+"\n")
     #output.close()
 
 ##################################################
