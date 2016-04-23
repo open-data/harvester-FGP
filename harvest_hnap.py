@@ -98,12 +98,8 @@ csw.getrecords2(format='xml', xml="""<?xml version="1.0"?>
     version="2.0.2"
     resultType="results"
     outputSchema="csw:IsoRecord"
-    maxRecords="100"
-<<<<<<< HEAD
+    maxRecords="1000"
     startPosition="1"
-=======
-    startPosition="0"
->>>>>>> d30431128d498611bc3d51b62b1fa3b042c70d5f
     >
     <csw:Query
         typeNames="gmd:MD_Metadata">
