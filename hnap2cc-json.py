@@ -30,6 +30,7 @@ debug_output = {}
 # input_file     = 'data/hnap_import.xml'
 input_file = None
 output_jl = "harvested_records.jl"
+output_err = "harvested_records.err"
 
 # Use stdin if it's populated
 if not sys.stdin.isatty():
@@ -122,7 +123,7 @@ def main():
 
 # CC::OpenMaps-01 Catalogue Type
         json_record[schema_ref["01"]['CKAN API property']] = 'dataset'
-# CC::OpenMaps-02 Catalogue Type
+# CC::OpenMaps-02 Collection Type
         json_record[schema_ref["02"]['CKAN API property']] = 'fgp'
 # CC::OpenMaps-03 Metadata Scheme
 #       CKAN defined/provided
@@ -146,6 +147,8 @@ def main():
 
         if HNAP_primary_language is False or HNAP_fileIdentifier is False:
             break
+
+        print "Creating: "+str(HNAP_fileIdentifier)
 
 # From here on in continue if you can and collect as many errors as
 # possible for FGP Help desk.  We awant to have a full report of issues
@@ -299,7 +302,7 @@ def main():
                     GOC_Div, GC_Registry_of_Applied_Terms)
                 if termsValue:
                     json_record[schema_ref["16"]['CKAN API property']] =\
-                        termsValue[4]
+                        (termsValue[1]+"-"+termsValue[3]).lower()
                     break
 
 
@@ -365,66 +368,83 @@ def main():
 # CC::OpenMaps-29 Contact Information (English)
 
         json_record[schema_ref["29"]['CKAN API property']] = {}
-        json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = {}
+        json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = ''
+
+        primary_data = []
 
         # deliveryPoint
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29a"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang]['deliveryPoint'] = value
+            primary_data.append('deliveryPoint;'+value)
         # city
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29b"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang]['city'] = value
+            primary_data.append('city;'+value)
         # administrativeArea
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29c"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang]['administrativeArea'] = value
+            primary_data.append('administrativeArea;'+value)
         # postalCode
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29d"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang]['postalCode'] = value
+            primary_data.append('postalCode;'+value)
         # country
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29e"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang]['country'] = value
+            primary_data.append('country;'+value)
         # electronicMailAddress
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29f"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang]['electronicMailAddress'] = value
+            primary_data.append('electronicMailAddress;'+value)
 
-        # XXX Check that there are values
+        if len(primary_data) < 1:
+            reportError(
+                HNAP_fileIdentifier +
+                ',' +
+                schema_ref["29"]['CKAN API property'] +
+                ',"Value not found in '+schema_ref["29"]['Reference']+'",""')
+
+        json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_data)
 
 # CC::OpenMaps-30 Contact Information (French)
 
-        second_vals = []
         json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang] = {}
+
+        secondary_data = []
 
         # deliveryPoint
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30a"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang]['deliveryPoint'] = value
+            secondary_data.append('deliveryPoint;'+value)
         # city
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30b"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang]['city'] = value
+            secondary_data.append('city;'+value)
         # administrativeArea
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30c"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang]['administrativeArea'] = value
+            secondary_data.append('administrativeArea;'+value)
         # postalCode
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30d"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang]['postalCode'] = value
+            secondary_data.append('postalCode;'+value)
         # country
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30e"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang]['country'] = value
+            secondary_data.append('country;'+value)
         # electronicMailAddress
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30f"])
         if value:
-            json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang]['electronicMailAddress'] = value
+            secondary_data.append('electronicMailAddress;'+value)
 
-        # XXX Check that there are values
+        if len(secondary_data) < 1:
+            reportError(
+                HNAP_fileIdentifier +
+                ',' +
+                schema_ref["30"]['CKAN API property'] +
+                ',"Value not found in '+schema_ref["30"]['Reference']+'",""')
+
+        json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang] = ','.join(secondary_data)
 
 # CC::OpenMaps-31 Contact Email
 
@@ -499,11 +519,26 @@ def main():
 
 # CC::OpenMaps-36 Subject
 
-        reportError(
-            HNAP_fileIdentifier +
-            ',' +
-            schema_ref["36"]['CKAN API property'] +
-            ',"NOT BEING HARVESTED"')
+        subject_values = []
+        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["36"])
+        if value:
+            for subject in value:
+                #print "SUB:"+subject
+                termsValue = fetchCLValue(
+                    subject.strip(), CL_Subjects)
+                if termsValue:
+                    for single_item in termsValue[3].split(','):
+                        subject_values.append(single_item.strip().lower())
+
+            if len(subject_values) < 1:
+                reportError(
+                    HNAP_fileIdentifier +
+                    ',' +
+                    schema_ref["36"]['CKAN API property'] +
+                    ',"Value not found in '+schema_ref["36"]['Reference']+'",""')
+            else:
+                json_record[schema_ref["36"]['CKAN API property']] = list(set(subject_values))
+
 
 # CC::OpenMaps-37 Topic Category
 
@@ -555,7 +590,8 @@ def main():
                             [west, south]
                         ]]
 
-                        json_record[schema_ref["41"]['CKAN API property']] = GeoJSON
+                        #json_record[schema_ref["41"]['CKAN API property']] = json.dumps(GeoJSON)
+                        json_record[schema_ref["41"]['CKAN API property']] = '{"type": "Polygon","coordinates": [[[%s,%s],[%s,%s],[%s,%s],[%s,%s],[%s,%s]]]}' % (west[0],south[0],east[0],south[0],east[0],north[0],west[0],north[0],west[0],south[0])
 
 # CC::OpenMaps-42 Geographic Region Name
 # TBS 2016-04-13: Not in HNAP, we can skip (the only providing the bounding box, not the region name)
@@ -619,7 +655,7 @@ def main():
                     schema_ref["45"]['CKAN API property'] +
                     ',"Value not found in '+schema_ref["45"]['Reference']+'",""')
             else:
-                json_record[schema_ref["45"]['CKAN API property']] = termsValue[0]
+                json_record[schema_ref["45"]['CKAN API property']] = termsValue[2]
 
 
 # CC::OpenMaps-46 Date Published
@@ -821,16 +857,20 @@ def main():
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["60"])
         # Not mandatory, process if you have it
         if value and len(value) > 0:
+#            print "A2:"+value
             # You have to itterate to find a valid one, not neccesaraly the
             for associationType in value:
+                print "A3:"+associationType
                 # Can you find the CL entry?
                 termsValue = fetchCLValue(
                     associationType, napDS_AssociationTypeCode)
                 if not termsValue:
                     termsValue = []
                 else:
-                    associationTypes_array.append(termsValue[0])
-        json_record[schema_ref["60"]['CKAN API property']] = ','.join(associationTypes_array)
+                    associationTypes_array.append(termsValue[2])
+
+        if len(associationTypes_array):
+            json_record[schema_ref["60"]['CKAN API property']] = ','.join(associationTypes_array)
 
 # CC::OpenMaps-61 Aggregate Dataset Identifier
 
@@ -839,7 +879,7 @@ def main():
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["61"])
         # Not mandatory, process if you have it
         if value and len(value) > 0:
-            print "VAL VAL:"+value
+            #print "VAL VAL:"+value
             for aggregateDataSetIdentifier in value:
                 (primary, secondary) =\
                     aggregateDataSetIdentifier.strip().split(';')
@@ -859,7 +899,7 @@ def main():
         if value:
             # You have to itterate to find a valid one, not neccesaraly the
             # first
-            print "VVV___"+value
+            #print "VVV___"+value
             for spatialRepresentationType in value:
                 # Can you find the CL entry?
                 termsValue = fetchCLValue(
@@ -1052,11 +1092,14 @@ def main():
             if value:
                 description_text = value.strip()
 
+
+                print description_text
+
                 if description_text.count(';') != 2:
                     reportError(
                         HNAP_fileIdentifier +
                         ',' +
-                        OGDMES_property +
+                        schema_ref["69-70-73"]['CKAN API property'] +
                         'contentType,"Error with source, should be ' +
                         'contentType;format;lang,lang","' +
                         description_text +
@@ -1064,7 +1107,7 @@ def main():
                     reportError(
                         HNAP_fileIdentifier +
                         ',' +
-                        OGDMES_property +
+                        schema_ref["69-70-73"]['CKAN API property'] +
                         'format,"Error with source, should be contentType;' +
                         'format;lang,lang","' +
                         description_text +
@@ -1072,7 +1115,7 @@ def main():
                     reportError(
                         HNAP_fileIdentifier +
                         ',' +
-                        OGDMES_property +
+                        schema_ref["69-70-73"]['CKAN API property'] +
                         'languages,"Error with source, should be ' +
                         'contentType;format;lang,lang","' +
                         description_text +
@@ -1082,35 +1125,60 @@ def main():
                      res_language) = description_text.split(';')
 
                     languages_in = res_language.strip().split(',')
+                    #print "LANG IN["+HNAP_fileIdentifier+"]:"+res_language.strip()
                     languages_out = []
                     for language in languages_in:
                         if language.strip() == 'eng':
-                            languages_out.append('eng; CAN')
+                            languages_out.append('en')
                         if language.strip() == 'fra':
-                            languages_out.append('fra; CAN')
+                            languages_out.append('fr')
+                        if language.strip() == 'zxx': # Non linguistic
+                            languages_out.append('zxx')
                     # language_str = ','.join(languages_out)
                     language_str = languages_out[0]
 
-                    json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip()
+
+                    #print res_contentType.strip()
+                    json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
+                    #XXX Super duper hack
+                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
+                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
+                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
+                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'dataset'
+
+                    #print "x0x0x0:"+json_record_resource[schema_ref["69"]['CKAN API property'].lower()]
                     json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
                     json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
             else:
                 reportError(
                     HNAP_fileIdentifier +
                     ',' +
-                    OGDMES_property +
+                    schema_ref["69-70-73"]['CKAN API property'] +
                     'format,madatory field missing,""')
                 reportError(
                     HNAP_fileIdentifier +
                     ',' +
-                    OGDMES_property +
+                    schema_ref["69-70-73"]['CKAN API property'] +
                     'language,madatory field missing,""')
                 reportError(
                     HNAP_fileIdentifier +
                     ',' +
-                    OGDMES_property +
+                    schema_ref["69-70-73"]['CKAN API property'] +
                     'contentType,madatory field missing,""')
 
+            if json_record_resource[schema_ref["69"]['CKAN API property']].lower() not in ResourceType:
+                reportError(
+                    HNAP_fileIdentifier +
+                    ',' +
+                    schema_ref["69-70-73"]['CKAN API property'] +
+                    '"invalid resource type","'+json_record_resource[schema_ref["69"]['CKAN API property']]+'",""')
+
+            if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
+                reportError(
+                    HNAP_fileIdentifier +
+                    ',' +
+                    schema_ref["69-70-73"]['CKAN API property'] +
+                    '"invalid resource format","'+json_record_resource[schema_ref["70"]['CKAN API property']]+'",""')
 
 # CC::OpenMaps-71 Character Set
 # TBS 2016-04-13: Not in HNAP, we can skip
@@ -1127,17 +1195,17 @@ def main():
 
 # CC::OpenMaps-75 Title (English)
 
-            json_record[schema_ref["75"]['CKAN API property']] = {}
-
-            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["75"])
-            if value:
-                json_record[schema_ref["75"]['CKAN API property']][CKAN_primary_lang] = value
+#            json_record[schema_ref["75"]['CKAN API property']] = {}
+#
+#            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["75"])
+#            if value:
+#                json_record[schema_ref["75"]['CKAN API property']][CKAN_primary_lang] = value
 
 # CC::OpenMaps-76 Title (French)
 
-            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["76"])
-            if value:
-                json_record[schema_ref["75"]['CKAN API property']][CKAN_secondary_lang] = value
+#            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["76"])
+#            if value:
+#                json_record[schema_ref["75"]['CKAN API property']][CKAN_secondary_lang] = value
 
 # CC::OpenMaps-76 Record Type
 # TBS 2016-04-13: Not in HNAP, we can skip
@@ -1151,6 +1219,7 @@ def main():
 # CC::OpenMaps-80 Record URL
 # TBS 2016-04-13: Not in HNAP, we can skip
 
+            print "  - resource: "+json_record_resource['name_translated']['en']
             json_record['resources'].append(json_record_resource)
 
 ##################################################
@@ -1162,6 +1231,9 @@ def main():
 ##################################################
 ##################################################
 ##################################################
+        print "Appending: "+str(HNAP_fileIdentifier)
+        json_record['imso_approval'] = 'true'
+        json_record['ready_to_publish'] = 'true'
         json_records.append(json_record)
 ##################################################
 ##################################################
@@ -1173,29 +1245,10 @@ def main():
 ##################################################
 ##################################################
 
-    print ""
-    print "DEBUG"
-
-    # Dump Errors to Screen
-    # print "\nOGDMES\n"
-    for key, value in sorted(debug_output.items()):
-       print key + ':',
-       if isinstance(value, unicode):
-           value = value.encode('utf-8')
-       print value
-
 
     print ""
-    if len(error_output) > 0:
-       print "\nERRORS\n"
-       sorted(error_output)
-       for error in error_output:
-           print error
-
+    print "Creating import JSON Lines file"
     print ""
-    print "JSON"
-    print ""
-
 
     # Write JSON Lines to files
     output = codecs.open(output_jl, 'w', 'utf-8')
@@ -1209,7 +1262,34 @@ def main():
             encoding='utf8')
         #print utf_8_output
         output.write(utf_8_output+"\n")
-    #output.close()
+    output.close()
+
+#    print ""
+#    print "DEBUG"
+#
+#    # Dump Errors to Screen
+#    # print "\nOGDMES\n"
+#    for key, value in sorted(debug_output.items()):
+#       print key + ':',
+#       if isinstance(value, unicode):
+#           value = value.encode('utf-8')
+#       print value
+#
+
+
+    # Write JSON Lines to files
+    output = codecs.open(output_err, 'w', 'utf-8')
+    for error in error_output:
+        output.write(unicode(error+"\n", 'utf-8'))
+    output.close()
+
+#    print ""
+#    if len(error_output) > 0:
+#       print "\nERRORS\n"
+#       sorted(error_output)
+#       for error in error_output:
+#           print unicode(error, 'utf-8')
+
 
 ##################################################
 # Reporting, Sanity and Access functions
@@ -1342,7 +1422,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             "codeListValue")
     #    print "YES ATTRIBUTE:"+str(len(tmp))
     else:
-        print 'lkajsldfjlsdjfka'+schema_ref['Value Type']
+        #print 'lkajsldfjlsdjfka'+schema_ref['Value Type']
         reportError(
             HNAP_fileIdentifier +
             ',' +
@@ -1368,7 +1448,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
     #    else:
     #        print " - PASS MANDATORY:"+str(len(tmp))
 
-    print "PAST MANDATORY:"+str(len(tmp))
+    #print "PAST MANDATORY:"+str(len(tmp))
 
     if schema_ref['Occurrences'] == 'S':
     #    print "TEST SINGLE:"+str(len(tmp))
@@ -1472,12 +1552,12 @@ napMD_ProgressCode = {
 #Association Type
 #IC_92    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_92
 napDS_AssociationTypeCode = {
-    'RI_428'    : [u'crossReference',           u'référenceCroisée'],
-    'RI_429'    : [u'largerWorkCitation',       u'référenceGénérique'],
-    'RI_430'    : [u'partOfSeamlessDatabase',   u'partieDeBaseDeDonnéesContinue'],
-    'RI_431'    : [u'source',                   u'source'],
-    'RI_432'    : [u'stereoMate',               u'stéréoAssociée'],
-    'RI_433'    : [u'isComposedOf',             u'estComposéDe']
+    'RI_428'    : [u'crossReference',           u'référenceCroisée',                u'cross_reference'],
+    'RI_429'    : [u'largerWorkCitation',       u'référenceGénérique',              u'larger_work_citation'],
+    'RI_430'    : [u'partOfSeamlessDatabase',   u'partieDeBaseDeDonnéesContinue',   u'part_of_seamless_database'],
+    'RI_431'    : [u'source',                   u'source',                          u'source'],
+    'RI_432'    : [u'stereoMate',               u'stéréoAssociée',                  u'stereo_mate'],
+    'RI_433'    : [u'isComposedOf',             u'estComposéDe',                    u'is_composed_of']
 }
 
 #spatialRespresentionType
@@ -1493,37 +1573,39 @@ napMD_SpatialRepresentationTypeCode = {
 
 #maintenanceAndUpdateFrequency
 #IC_102    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_102
-#napMD_MaintenanceFrequencyCode = {
-#    'RI_532'    :[u'continual',                u'continue'],
-#    'RI_533'    :[u'daily',                    u'quotidien'],
-#    'RI_534'    :[u'weekly',                   u'hebdomadaire'],
-#    'RI_535'    :[u'fortnightly',              u'quinzomadaire'],
-#    'RI_536'    :[u'monthly',                  u'mensuel'],
-#    'RI_537'    :[u'quarterly',                u'trimestriel'],
-#    'RI_538'    :[u'biannually',               u'semestriel'],
-#    'RI_539'    :[u'annually',                 u'annuel'],
-#    'RI_540'    :[u'asNeeded',                 u'auBesoin'],
-#    'RI_541'    :[u'irregular',                u'irrégulier'],
-#    'RI_542'    :[u'notPlanned',               u'nonPlanifié'],
-#    'RI_543'    :[u'unknown',                  u'inconnu'],
-#    'RI_544'    :[u'semimonthly',              u'bimensuel'],
-#}
-# This metadata has to match CKAN required values
 napMD_MaintenanceFrequencyCode = {
-    'RI_532'    : [u'continual'],
-    'RI_533'    : [u'daily'],
-    'RI_534'    : [u'weekly'],
-    'RI_535'    : [u'fortnightly'],
-    'RI_536'    : [u'monthly'],
-    'RI_537'    : [u'quarterly'],
-    'RI_538'    : [u'biannually'],
-    'RI_539'    : [u'annually'],
-    'RI_540'    : [u'as_needed'],
-    'RI_541'    : [u'irregular'],
-    'RI_542'    : [u'not_planned'],
-    'RI_543'    : [u'unknown'],
-    'RI_544'    : [u'semimonthly'],
+    'RI_532'    :[u'continual',                u'continue',         u'continual'],
+    'RI_533'    :[u'daily',                    u'quotidien',        u'P1D'],
+    'RI_534'    :[u'weekly',                   u'hebdomadaire',     u'P1W'],
+    'RI_535'    :[u'fortnightly',              u'quinzomadaire',    u'P2W'],
+    'RI_536'    :[u'monthly',                  u'mensuel',          u'P1M'],
+    'RI_537'    :[u'quarterly',                u'trimestriel',      u'P3M'],
+    'RI_538'    :[u'biannually',               u'semestriel',       u'P6M'],
+    'RI_539'    :[u'annually',                 u'annuel',           u'P1Y'],
+    'RI_540'    :[u'asNeeded',                 u'auBesoin',         u'as_needed'],
+    'RI_541'    :[u'irregular',                u'irrégulier',       u'irregular'],
+    'RI_542'    :[u'notPlanned',               u'nonPlanifié',      u'not_planned'],
+    'RI_543'    :[u'unknown',                  u'inconnu',          u'unknown'],
+    'RI_544'    :[u'semimonthly',              u'bimensuel',        u'P2M'],
 }
+
+
+# This metadata has to match CKAN required values
+#napMD_MaintenanceFrequencyCode = {
+#    'RI_532'    : [u'continual'],
+#    'RI_533'    : [u'daily'],
+#    'RI_534'    : [u'weekly'],
+#    'RI_535'    : [u'fortnightly'],
+#    'RI_536'    : [u'monthly'],
+#    'RI_537'    : [u'quarterly'],
+#    'RI_538'    : [u'biannually'],
+#    'RI_539'    : [u'annually'],
+#    'RI_540'    : [u'as_needed'],
+#    'RI_541'    : [u'irregular'],
+#    'RI_542'    : [u'not_planned'],
+#    'RI_543'    : [u'unknown'],
+#    'RI_544'    : [u'semimonthly'],
+#}
 
 # # In the mapping doc but not used
 # presentationForm
@@ -1888,6 +1970,295 @@ GC_Registry_of_Applied_Terms = {
     'Diversification de l\'économie de l\'Ouest Canada'                               : [u'Western Economic Diversification Canada',u'WD',u'Diversification de l\'économie de l\'Ouest Canada',u'DEO',u'55'],
     'Autorité du pont Windsor-Détroit'                                                : [u'Windsor-Detroit Bridge Authority',u'',u'Autorité du pont Windsor-Détroit',u'',u'55553'],
 }
+
+
+
+
+ResourceType = [
+    'abstract',
+    'agreement',
+    'contractual_material',
+    'intergovernmental_agreement',
+    'lease',
+    'memorandum_of_understanding',
+    'nondisclosure_agreement',
+    'service-level_agreement',
+    'affidavit',
+    'application',
+    'architectural_or_technical_design',
+    'article',
+    'assessment',
+    'audit',
+    'environmental_assessment',
+    'examination',
+    'gap_assessment',
+    'lessons_learned',
+    'performance_indicator',
+    'risk_assessment',
+    'biography',
+    'briefing_material',
+    'backgrounder',
+    'business_case',
+    'claim',
+    'comments',
+    'conference_proceedings',
+    'consultation',
+    'contact_information',
+    'correspondence',
+    'ministerial_correspondence',
+    'memorandum',
+    'dataset',
+    'delegation_of_authority',
+    'educational_material',
+    'employment_opportunity',
+    'event',
+    'fact_sheet',
+    'financial_material',
+    'budget',
+    'funding_proposal',
+    'invoice',
+    'financial_statement',
+    'form',
+    'framework',
+    'geospatial_material',
+    'guide',
+    'best_practices',
+    'intellectual_property_statement',
+    'legal_complaint',
+    'legal_opinion',
+    'legislation_and_regulations',
+    'licenses_and_permits',
+    'literary_material',
+    'statement',
+    'media_release',
+    'meeting_material',
+    'agenda',
+    'minutes',
+    'memorandum_to_cabinet',
+    'multimedia_resource',
+    'notice',
+    'organizational_description',
+    'plan',
+    'business_plan',
+    'strategic_plan',
+    'policy',
+    'white_paper',
+    'presentation',
+    'procedure',
+    'profile',
+    'project_material',
+    'project_charter',
+    'project_plan',
+    'project_proposal',
+    'promotional_material',
+    'publication',
+    'faq',
+    'record_of_decision',
+    'report',
+    'annual_report',
+    'interim_report',
+    'research_proposal',
+    'resource_list',
+    'routing_slip',
+    'blog_entry',
+    'sound_recording',
+    'specification',
+    'statistics',
+    'still_image',
+    'submission',
+    'survey',
+    'terminology',
+    'terms_of_reference',
+    'tool',
+    'training_material',
+    'transcript',
+    'website',
+    'workflow',
+    'web_service'
+]
+
+CL_Formats = [
+    'AAC',
+    'AIFF',
+    'AMF',
+    'API',
+    'ASCII Grid',
+    'ASCII Text',
+    'AVI',
+    'BMP',
+    'BWF',
+    'CDED ASCII',
+    'CDR',
+    'CSV',
+    'DBF',
+    'DICOM',
+    'DNG',
+    'DOC',
+    'DOCX',
+    'DXF',
+    'EOO',
+    'ECW',
+    'EDI',
+    'EMF',
+    'EPUB3',
+    'EPUB2.0.1',
+    'EPS',
+    'ESRI REST',
+    'EXE',
+    'FGDB / GDB',
+    'Flat raster binary',
+    'GeoPDF',
+    'GeoRSS',
+    'GeoTIF',
+    'GIF',
+    'GML',
+    'HDF',
+    'HTML',
+    'IATI',
+    'JFIF',
+    'JPEG 2000',
+    'JPG',
+    'JPG2',
+    'JSON',
+    'JSON Lines ',
+    'KML / KMZ',
+    'MFX',
+    'MOV',
+    'MPEG',
+    'MPEG-1',
+    'MP3',
+    'NetCDF',
+    'ODF',
+    'ODP',
+    'ODS',
+    'ODT',
+    'PDF',
+    'PDF/A-1',
+    'PDF/A-2',
+    'PNG',
+    'PPT',
+    'RDF',
+    'RDFa',
+    'RSS',
+    'RTF',
+    'SAR / CCT',
+    'SAV',
+    'SEGY',
+    'SHP',
+    'SLS',
+    'SLSM',
+    'SQL',
+    'SVG',
+    'TIFF',
+    'TXT',
+    'WAV',
+    'WFS',
+    'WMS',
+    'WMTS',
+    'WMV',
+    'XML',
+    'XLS',
+    'other'
+]
+
+CL_Subjects = {
+    'farming': [
+        'Farming',
+        'Agriculture',
+        'Agriculture',
+        'agriculture'],
+    'biota': [
+        'Biota',
+        'Biote',
+        'Nature and Environment, Science and Technology',
+        'nature_and_environment,science_and_technology'],
+    'boundaries': [
+        'Boundaries',
+        'Frontières',
+        'Government and Politics',
+        'government_and_politics'],
+    'climatologyMeteorologyAtmosphere': [
+        'Climatology / Meteorology / Atmosphere',
+        'Climatologie / Météorologie / Atmosphère',
+        'Nature and Environment, Science and Technology',
+        'nature_and_environment,science_and_technology'],
+    'economy': [
+        'Economy',
+        'Économie',
+        'Economics and Industry',
+        'economics_and_industry'],
+    'elevation': [
+        'Elevation',
+        'Élévation',
+        'Form Descriptors',
+        'form_descriptors'],
+    'environment': [
+        'Environment',
+        'Environnement',
+        'Nature and Environment',
+        'nature_and_environment'],
+    'geoscientificInformation': [
+        'Geoscientific Information',
+        'Information géoscientifique',
+        'Nature and Environment, Science and Technology, Form Descriptors',
+        'nature_and_environment,science_and_technology,form_descriptors'],
+    'health': [
+        'Health',
+        'Santé',
+        'Health and Safety',
+        'health_and_safety'],
+    'imageryBaseMapsEarthCover': [
+        'Imagery Base Maps Earth Cover',
+        'Imagerie carte de base couverture terrestre',
+        'Form Descriptors',
+        'form_descriptors'],
+    'intelligenceMilitary': [
+        'Intelligence Military',
+        'Renseignements militaires',
+        'Military',
+        'military'],
+    'inlandWaters': [
+        'Inland Waters',
+        'Eaux intérieures',
+        'Nature and Environment',
+        'nature_and_environment'],
+    'location': [
+        'Location',
+        'Localisation',
+        'Form Descriptors',
+        'form_descriptors'],
+    'oceans': [
+        'Oceans',
+        'Océans',
+        'Nature and Environment',
+        'nature_and_environment'],
+    'planningCadastre': [
+        'Planning Cadastre',
+        'Aménagement cadastre',
+        'Nature and Environment, Form Descriptors, Economics and Industry',
+        'nature_and_environment,form_descriptors,economics_and_industry'],
+    'society': [
+        'Society',
+        'Société',
+        'Society and Culture',
+        'society_and_culture'],
+    'structure': [
+        'Structure',
+        'Structures',
+        'Economics and Industry',
+        'economics_and_industry'],
+    'transportation': [
+        'Transportation',
+        'Transport',
+        'Transport',
+        'transport'],
+    'utilitiesCommunication': [
+        'Utilities Communication',
+        'Services communication',
+        'Economics and Industry, Information and Communications',
+        'economics_and_industry,information_and_communications']
+}
+
 
 OGP_catalogueType = {
     'Data'       : [u'Data',                       u'Données'],
