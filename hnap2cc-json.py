@@ -1200,7 +1200,7 @@ def main():
                     if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
                         json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
                     if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
-                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'dataset'
+                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'web_service'
 
                     #print "x0x0x0:"+json_record_resource[schema_ref["69"]['CKAN API property'].lower()]
                     json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
