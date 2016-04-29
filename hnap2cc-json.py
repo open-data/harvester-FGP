@@ -271,40 +271,79 @@ def main():
 
 # CC::OpenMaps-16 Publisher - Current Organization Name
 
+        org_strings = []
         org_string = ''
+        attempt = ''
         value = fetch_FGP_value(
             record, HNAP_fileIdentifier, schema_ref["16a"])
-        if value and re.search("^Government of Canada;", value):
-            org_string = value
+        if not value or len(value) < 1:
+            attempt += "No english value"
         else:
-            value = fetch_FGP_value(
-                record, HNAP_fileIdentifier, schema_ref["16b"])
-            if value and re.search("^Government of Canada;", value):
-                org_string = value
+            attempt += "Is english value ["+str(len(value))+"]"
+            for single_value in value:            
+                if re.search("^Government of Canada;", single_value):
+                    #org_string = value
+                    org_strings.append(single_value)
+                else:
+                    attempt += " but no GoC prefix ["+single_value+"]"
 
-        if org_string == '':
+        value = fetch_FGP_value(
+            record, HNAP_fileIdentifier, schema_ref["16b"])
+        if not value or len(value) < 1:
+            attempt += ", no french value"
+        else:
+            attempt += ", french ["+str(len(value))+"]"
+            for single_value in value:            
+                if re.search("^Government du Canada;", single_value):
+                    #org_string = value
+                    org_strings.append(single_value)
+                else:
+                    attempt += " but no GdC ["+single_value+"]"
+
+
+#        if len(org_strings) == '':
+#            value = fetch_FGP_value(
+#                record, HNAP_fileIdentifier, schema_ref["16b"])
+#            if not value:
+#                attempt += ", no french value"
+#            else:
+#                attempt += ", french"
+#                if re.search("^Government du Canada;", value):
+#                    org_string = value
+#                else:
+#                    attempt += " but no GdC ["+value+"]"
+#
+#        if org_string == '':
+#            reportError(
+#                HNAP_fileIdentifier +
+#                ',' +
+#                schema_ref["16"]['CKAN API property'] +
+#                ',"Bad organizationName, no Government of Canada","'+attempt+'"')
+
+        if len(org_strings) < 1:
             reportError(
                 HNAP_fileIdentifier +
                 ',' +
                 schema_ref["16"]['CKAN API property'] +
-                ',"Bad organizationName, no Government of Canada",""')
+                ',"Bad organizationName, no Government of Canada","'+attempt+'"')
         else:
-            GOC_Structure = value.strip().split(';')
-            del GOC_Structure[0]
+            valid_orgs = []
+            for org_string in org_strings:
+                GOC_Structure = org_string.strip().split(';')
+                del GOC_Structure[0]
 
-            # print GOC_Structure
+                # print GOC_Structure
 
-            # At ths point you have ditched GOC and your checking for good
-            # dept names
-            for GOC_Div in GOC_Structure:
-                # Are they in the CL?
-                termsValue = fetchCLValue(
-                    GOC_Div, GC_Registry_of_Applied_Terms)
-                if termsValue:
-                    json_record[schema_ref["16"]['CKAN API property']] =\
-                        (termsValue[1]+"-"+termsValue[3]).lower()
-                    break
-
+                # At ths point you have ditched GOC and your checking for good
+                # dept names
+                for GOC_Div in GOC_Structure:
+                    # Are they in the CL?
+                    termsValue = fetchCLValue(
+                        GOC_Div, GC_Registry_of_Applied_Terms)
+                    if termsValue:
+                        valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
+                        break
+            json_record[schema_ref["16"]['CKAN API property']] = ','.join(valid_orgs)
 
 # CC::OpenMaps-17 Publisher - Organization Name at Publication (English)
 #       CKAN defined/provided
