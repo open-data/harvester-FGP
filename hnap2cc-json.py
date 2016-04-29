@@ -1272,7 +1272,9 @@ def main():
                     schema_ref["69-70-73"]['CKAN API property'] +
                     '"invalid resource type","'+json_record_resource[schema_ref["69"]['CKAN API property']]+'",""')
 
+            print "---"+json_record_resource[schema_ref["70"]['CKAN API property']]
             if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
+                print "bad format"
                 reportError(
                     HNAP_fileIdentifier +
                     ',' +
@@ -1377,9 +1379,11 @@ def main():
 
 
     # Write JSON Lines to files
+    print "Total ERRS:"+str(len(error_output))
     output = codecs.open(output_err, 'w', 'utf-8')
     for error in error_output:
-        output.write(unicode(error+"\n", 'utf-8'))
+        #output.write(unicode(error+"\n", 'utf-8'))
+        output.write(error+u"\n")
     output.close()
 
 #    print ""
@@ -1402,7 +1406,11 @@ def main():
 def reportError(errorText):
     global error_output
     #global OGDMES2ID
+    #print len(error_output)
+    if not isinstance(errorText, unicode):
+        errorText = unicode(errorText, 'utf-8')
     error_output.append(errorText)
+    #print len(error_output)
 # Sanity check: make sure the value exists
 def sanityMandatory(pre, values):
     values = list(set(values))
@@ -1526,7 +1534,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             HNAP_fileIdentifier +
             ',' +
             schema_ref['CKAN API property'] +
-            ',"FETCH on undefined Value Type",""')
+            ',"FETCH on undefined Value Type","'+schema_ref['CKAN API property']+':'+schema_ref['Value Type']+'"')
         return False
 
     if schema_ref['Requirement'] == 'M':
