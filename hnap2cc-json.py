@@ -1506,6 +1506,8 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
 
     #print "PAST MANDATORY:"+str(len(tmp))
 
+    if schema_ref['Occurrences'] == 'M':
+        print "BAD OCCURENCES:M:"+schema_ref['CKAN API property']
     if schema_ref['Occurrences'] == 'S':
     #    print "TEST SINGLE:"+str(len(tmp))
         if not sanitySingle(
@@ -1513,12 +1515,6 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             schema_ref['CKAN API property'],
             tmp
         ):
-            reportError(
-                HNAP_fileIdentifier +
-                ',' +
-                schema_ref['CKAN API property'] +
-                ',"Not a singular property",""')
-    #        print " - FAIL SINGLE"
             return False
         else:
     #        print " - PASS SINGLE:"+str(len(tmp))
@@ -2157,7 +2153,7 @@ CL_Formats = [
     'EDI',
     'EMF',
     'EPUB3',
-    'EPUB2.0.1',
+    'EPUB2',
     'EPS',
     'ESRI REST',
     'EXE',
@@ -2177,7 +2173,7 @@ CL_Formats = [
     'JPG2',
     'JSON',
     'JSON Lines ',
-    'KML / KMZ',
+    'KML',
     'MFX',
     'MOV',
     'MPEG',
@@ -2214,7 +2210,7 @@ CL_Formats = [
     'WMV',
     'XML',
     'XLS',
-    'other'
+    'ZIP'
 ]
 
 CL_Subjects = {
