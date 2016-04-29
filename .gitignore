@@ -58,3 +58,4 @@ target/
 harvester.ini
 sample data
 *.jl
+*.err

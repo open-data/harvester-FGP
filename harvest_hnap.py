@@ -98,7 +98,7 @@ csw.getrecords2(format='xml', xml="""<?xml version="1.0"?>
     version="2.0.2"
     resultType="results"
     outputSchema="csw:IsoRecord"
-    maxRecords="100"
+    maxRecords="1000"
     startPosition="1"
     >
     <csw:Query
