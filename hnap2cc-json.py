@@ -370,34 +370,51 @@ def main():
 # CC::OpenMaps-25 Position Name (French)
 
         json_record[schema_ref["24"]['CKAN API property']] = {}
+
+        schema_ref["24"]['Occurrences'] = 'R'
+        primary_data = []
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["24"])
         if value:
-            json_record[
-                schema_ref["24"]['CKAN API property']
-            ][CKAN_primary_lang] = value
+            for single_value in value:
+                primary_data.append(value)
+
+        if len(primary_data) > 0:
+            json_record[schema_ref["24"]['CKAN API property']][CKAN_primary_lang] = ','.join(value)
+
+        schema_ref["25"]['Occurrences'] = 'R'
+        primary_data = []
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["25"])
         if value:
-            json_record[
-                schema_ref["24"]['CKAN API property']
-            ][CKAN_secondary_lang] = value
+            for single_value in value:
+                primary_data.append(value)
+
+        if len(primary_data) > 0:
+            json_record[schema_ref["24"]['CKAN API property']][CKAN_secondary_lang] = ','.join(value)
 
         if len(json_record[schema_ref["24"]['CKAN API property']]) < 1:
             del json_record[schema_ref["24"]['CKAN API property']]
 
 # CC::OpenMaps-26 Role
 
+        # Single report out, multiple records combined
+        schema_ref["26"]['Occurrences'] = 'R'
+        primary_data = []
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["26"])
         if value:
-            # Can you find the CL entry?
-            termsValue = fetchCLValue(value, napCI_RoleCode)
-            if not termsValue:
-                reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
-                    schema_ref["26"]['CKAN API property'] +
-                    ',"Value not found in '+schema_ref["26"]['Reference']+'",""')
-            else:
-                json_record[schema_ref["26"]['CKAN API property']] = termsValue[0]
+            for single_value in value:
+                # Can you find the CL entry?
+                termsValue = fetchCLValue(single_value, napCI_RoleCode)
+                if not termsValue:
+                    reportError(
+                        HNAP_fileIdentifier +
+                        ',' +
+                        schema_ref["26"]['CKAN API property'] +
+                        ',"Value not found in '+schema_ref["26"]['Reference']+'",""')
+                else:
+                    primary_data.append(termsValue[0])
+
+        if len(primary_data) > 0:
+            json_record[schema_ref["26"]['CKAN API property']] = ','.join(value)
 
 # CC::OpenMaps-27
 #       Undefined property number
