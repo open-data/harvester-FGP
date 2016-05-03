@@ -1354,6 +1354,7 @@ def main():
         print "Appending: "+str(HNAP_fileIdentifier)
         json_record['imso_approval'] = 'true'
         json_record['ready_to_publish'] = 'true'
+        json_record['state'] = 'active'
         #if error don't do this 
         json_records.append(json_record)
 ##################################################
