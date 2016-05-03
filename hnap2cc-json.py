@@ -19,8 +19,9 @@ import codecs
 
 ##################################################
 # TL err/dbg
-error_output = []
-debug_output = {}
+error_output  = []
+error_records = {}
+debug_output  = {}
 
 ##################################################
 # Process the command request
@@ -30,7 +31,7 @@ debug_output = {}
 # input_file     = 'data/hnap_import.xml'
 input_file = None
 output_jl = "harvested_records.jl"
-output_err = "harvested_records.err"
+output_err = "harvested_record_errors.csv"
 
 # Use stdin if it's populated
 if not sys.stdin.isatty():
@@ -68,6 +69,7 @@ with open(schema_file, 'rb') as f:
         schema_ref[row[0]]['Reference'] = row[6]
         schema_ref[row[0]]['Value Type'] = row[7]
         schema_ref[row[0]]['FGP XPATH'] = unicode(row[8], 'utf-8')
+        schema_ref[row[0]]['RegEx Filter'] = unicode(row[9], 'utf-8')
 
 # records_root   = "/gmd:MD_Metadata"
 records_root = ("/csw:GetRecordsResponse/"
@@ -148,7 +150,7 @@ def main():
         if HNAP_primary_language is False or HNAP_fileIdentifier is False:
             break
 
-        print "Creating: "+str(HNAP_fileIdentifier)
+        #print "Creating: "+str(HNAP_fileIdentifier)
 
 # From here on in continue if you can and collect as many errors as
 # possible for FGP Help desk.  We awant to have a full report of issues
@@ -327,10 +329,10 @@ def main():
 
         if len(org_strings) < 1:
             reportError(
-                HNAP_fileIdentifier +
-                ',' +
+                '"'+HNAP_fileIdentifier +
+                '","' +
                 schema_ref["16"]['CKAN API property'] +
-                ',"Bad organizationName, no Government of Canada","'+attempt+'"')
+                '","Bad organizationName, no Government of Canada","'+attempt+'"')
         else:
             valid_orgs = []
             for org_string in org_strings:
@@ -411,10 +413,10 @@ def main():
                 termsValue = fetchCLValue(single_value, napCI_RoleCode)
                 if not termsValue:
                     reportError(
-                        HNAP_fileIdentifier +
-                        ',' +
+                        '"'+HNAP_fileIdentifier +
+                        '","' +
                         schema_ref["26"]['CKAN API property'] +
-                        ',"Value not found in '+schema_ref["26"]['Reference']+'",""')
+                        '","Value not found in '+schema_ref["26"]['Reference']+'",""')
                 else:
                     primary_data.append(termsValue[0])
 
@@ -466,10 +468,10 @@ def main():
 
         if len(primary_data) < 1:
             reportError(
-                HNAP_fileIdentifier +
-                ',' +
+                '"'+HNAP_fileIdentifier +
+                '","' +
                 schema_ref["29"]['CKAN API property'] +
-                ',"Value not found in '+schema_ref["29"]['Reference']+'",""')
+                '","Value not found in '+schema_ref["29"]['Reference']+'",""')
 
         json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_data)
 
@@ -512,10 +514,10 @@ def main():
 
         if len(secondary_data) < 1:
             reportError(
-                HNAP_fileIdentifier +
-                ',' +
+                '"'+HNAP_fileIdentifier +
+                '","' +
                 schema_ref["30"]['CKAN API property'] +
-                ',"Value not found in '+schema_ref["30"]['Reference']+'",""')
+                '","Value not found in '+schema_ref["30"]['Reference']+'",""')
 
         json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang] = ','.join(secondary_data)
 
@@ -531,7 +533,7 @@ def main():
         if value:
             for single_value in value:
                 primary_data.append(single_value)
-        
+
         if len(primary_data) > 0:
             json_record[schema_ref["31"]['CKAN API property']] = ','.join(value)
 
@@ -569,15 +571,22 @@ def main():
                 single_value = p.sub('', single_value)
                 single_value = single_value.strip()
                 if len(single_value) >= 2:
+                    if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                        reportError(
+                            '"'+HNAP_fileIdentifier +
+                            '","' +
+                            schema_ref["34"]['CKAN API property'] +
+                            '-' + CKAN_primary_lang +
+                            '","Invalid character in Keyword","Must be alpha-numeric, space or \-_./;>+& ['+single_value+']"')
                     if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
                         json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
             if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["34"]['CKAN API property'] +
                     CKAN_primary_lang +
-                    ',""')
+                    '","No keywords",""')
 
 # CC::OpenMaps-35 Keywords (French)
 
@@ -589,15 +598,22 @@ def main():
                 p = re.compile('^[A-Z][A-Z] [^>]+ > ')
                 single_value = p.sub('', single_value)
                 if len(single_value) >= 2:
+                    if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                        reportError(
+                            '"'+HNAP_fileIdentifier +
+                            '","' +
+                            schema_ref["34"]['CKAN API property'] +
+                            '-' + CKAN_secondary_lang +
+                            '","Invalid character in Keyword","Must be alpha-numeric, space or \-_./;>+& ['+single_value+']"')
                     if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
                         json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
             if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["34"]['CKAN API property'] +
                     CKAN_primary_lang +
-                    ',""')
+                    '","No keywords",""')
 
 # CC::OpenMaps-36 Subject
 
@@ -614,10 +630,10 @@ def main():
 
             if len(subject_values) < 1:
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["36"]['CKAN API property'] +
-                    ',"Value not found in '+schema_ref["36"]['Reference']+'",""')
+                    '","Value not found in '+schema_ref["36"]['Reference']+'",""')
             else:
                 json_record[schema_ref["36"]['CKAN API property']] = list(set(subject_values))
 
@@ -635,10 +651,10 @@ def main():
 
             if len(topicCategory_values) < 1:
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["37"]['CKAN API property'] +
-                    ',"Value not found in '+schema_ref["37"]['Reference']+'",""')
+                    '","Value not found in '+schema_ref["37"]['Reference']+'",""')
             else:
                 json_record[schema_ref["37"]['CKAN API property']] = topicCategory_values
 
@@ -732,10 +748,10 @@ def main():
             termsValue = fetchCLValue(value, napMD_MaintenanceFrequencyCode)
             if not termsValue:
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["45"]['CKAN API property'] +
-                    ',"Value not found in '+schema_ref["45"]['Reference']+'",""')
+                    '","Value not found in '+schema_ref["45"]['Reference']+'",""')
             else:
                 json_record[schema_ref["45"]['CKAN API property']] = termsValue[2]
 
@@ -785,9 +801,8 @@ def main():
 
         if 'date_published' not in json_record:
             reportError(
-                HNAP_fileIdentifier +
-                ',' +
-                'datePublished,madatory field missing,""')
+                '"'+HNAP_fileIdentifier +
+                '","datePublished,madatory field missing",""')
 
 # CC::OpenMaps-48 Date Released
 # SYSTEM GENERATED
@@ -922,10 +937,10 @@ def main():
                 termsValue = fetchCLValue(single_value, napCI_RoleCode)
                 if not termsValue:
                     reportError(
-                        HNAP_fileIdentifier +
-                        ',' +
+                        '"'+HNAP_fileIdentifier +
+                        '","' +
                         schema_ref["57"]['CKAN API property'] +
-                        ',"Value not found in '+schema_ref["57"]['Reference']+'",""')
+                        '","Value not found in '+schema_ref["57"]['Reference']+'",""')
                 else:
                     primary_vals.append('role;'+termsValue[0])
                     second_vals.append('role;'+termsValue[1])
@@ -942,10 +957,10 @@ def main():
             termsValue = fetchCLValue(value, napMD_ProgressCode)
             if not termsValue:
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["59"]['CKAN API property'] +
-                    ',"Value not found in '+schema_ref["59"]['Reference']+'",""')
+                    '","Value not found in '+schema_ref["59"]['Reference']+'",""')
             else:
                 json_record[schema_ref["59"]['CKAN API property']] = termsValue[0]
 
@@ -959,7 +974,7 @@ def main():
 #            print "A2:"+value
             # You have to itterate to find a valid one, not neccesaraly the
             for associationType in value:
-                print "A3:"+associationType
+                #print "A3:"+associationType
                 # Can you find the CL entry?
                 termsValue = fetchCLValue(
                     associationType, napDS_AssociationTypeCode)
@@ -1192,28 +1207,28 @@ def main():
                 description_text = value.strip()
 
 
-                print description_text
+                #print description_text
 
                 if description_text.count(';') != 2:
                     reportError(
-                        HNAP_fileIdentifier +
-                        ',' +
+                        '"'+HNAP_fileIdentifier +
+                        '","' +
                         schema_ref["69-70-73"]['CKAN API property'] +
                         'contentType,"Error with source, should be ' +
                         'contentType;format;lang,lang","' +
                         description_text +
                         '"')
                     reportError(
-                        HNAP_fileIdentifier +
-                        ',' +
+                        '"'+HNAP_fileIdentifier +
+                        '","' +
                         schema_ref["69-70-73"]['CKAN API property'] +
                         'format,"Error with source, should be contentType;' +
                         'format;lang,lang","' +
                         description_text +
                         '"')
                     reportError(
-                        HNAP_fileIdentifier +
-                        ',' +
+                        '"'+HNAP_fileIdentifier +
+                        '","' +
                         schema_ref["69-70-73"]['CKAN API property'] +
                         'languages,"Error with source, should be ' +
                         'contentType;format;lang,lang","' +
@@ -1242,6 +1257,10 @@ def main():
                     #XXX Super duper hack
                     if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
                         json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
+                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'Supporting Documents':
+                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
+                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'Supporting Document':
+                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
                     if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
                         json_record_resource[schema_ref["69"]['CKAN API property']] = 'web_service'
 
@@ -1250,36 +1269,36 @@ def main():
                     json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
             else:
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["69-70-73"]['CKAN API property'] +
-                    'format,madatory field missing,""')
+                    '","format,madatory field missing",""')
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["69-70-73"]['CKAN API property'] +
-                    'language,madatory field missing,""')
+                    '","language,madatory field missing",""')
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["69-70-73"]['CKAN API property'] +
-                    'contentType,madatory field missing,""')
+                    '","contentType,madatory field missing",""')
 
             if json_record_resource[schema_ref["69"]['CKAN API property']].lower() not in ResourceType:
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["69-70-73"]['CKAN API property'] +
-                    '"invalid resource type","'+json_record_resource[schema_ref["69"]['CKAN API property']]+'",""')
+                    '","invalid resource type","'+json_record_resource[schema_ref["69"]['CKAN API property']]+'",""')
 
-            print "---"+json_record_resource[schema_ref["70"]['CKAN API property']]
+            #print "---"+json_record_resource[schema_ref["70"]['CKAN API property']]
             if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
-                print "bad format"
+                #print "bad format"
                 reportError(
-                    HNAP_fileIdentifier +
-                    ',' +
+                    '"'+HNAP_fileIdentifier +
+                    '","' +
                     schema_ref["69-70-73"]['CKAN API property'] +
-                    '"invalid resource format","'+json_record_resource[schema_ref["70"]['CKAN API property']]+'",""')
+                    '","invalid resource format","'+json_record_resource[schema_ref["70"]['CKAN API property']]+'",""')
 
 # CC::OpenMaps-71 Character Set
 # TBS 2016-04-13: Not in HNAP, we can skip
@@ -1320,7 +1339,7 @@ def main():
 # CC::OpenMaps-80 Record URL
 # TBS 2016-04-13: Not in HNAP, we can skip
 
-            print "  - resource: "+json_record_resource['name_translated']['en']
+            #print "  - resource: "+json_record_resource['name_translated']['en']
             json_record['resources'].append(json_record_resource)
 
 ##################################################
@@ -1335,6 +1354,7 @@ def main():
         print "Appending: "+str(HNAP_fileIdentifier)
         json_record['imso_approval'] = 'true'
         json_record['ready_to_publish'] = 'true'
+        #if error don't do this 
         json_records.append(json_record)
 ##################################################
 ##################################################
@@ -1405,6 +1425,7 @@ def main():
 # Fire off an error to cmd line
 def reportError(errorText):
     global error_output
+    global error_records
     #global OGDMES2ID
     #print len(error_output)
     if not isinstance(errorText, unicode):
@@ -1531,10 +1552,10 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
     else:
         #print 'lkajsldfjlsdjfka'+schema_ref['Value Type']
         reportError(
-            HNAP_fileIdentifier +
-            ',' +
+            '"'+HNAP_fileIdentifier +
+            '","' +
             schema_ref['CKAN API property'] +
-            ',"FETCH on undefined Value Type","'+schema_ref['CKAN API property']+':'+schema_ref['Value Type']+'"')
+            '","FETCH on undefined Value Type","'+schema_ref['CKAN API property']+':'+schema_ref['Value Type']+'"')
         return False
 
     if schema_ref['Requirement'] == 'M':
@@ -1546,10 +1567,10 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             tmp
         ):
             reportError(
-                HNAP_fileIdentifier +
-                ',' +
+                '"'+HNAP_fileIdentifier +
+                '","' +
                 schema_ref['CKAN API property'] +
-                ',"Missing mandatory property",""')
+                '","Missing mandatory property",""')
     #        print " - FAIL MANDATORY"
             return False
     #    else:
@@ -2074,100 +2095,204 @@ GC_Registry_of_Applied_Terms = {
     'Autorité du pont Windsor-Détroit'                                                : [u'Windsor-Detroit Bridge Authority',u'',u'Autorité du pont Windsor-Détroit',u'',u'55553'],
 }
 
-
+#new_resourceType =[
+#'List in Old Registry','English List for New Registry','French List for New Registry','API value for resource_type resource field'
+#'','First-level Term','Second-level Term','Terme de premier niveau','Terme de deuxième niveau',''
+#'--','--','--','--','--',''
+#'','abstract','--','sommaire','--','abstract'
+#'','agreement','--','entente','--','agreement'
+#'','agreement','contractual material','entente','contenu contractuel','contractual_material'
+#'','agreement','intergovernmental agreement','entente','entente intergouvernementale','intergovernmental_agreement'
+#'','agreement','lease','entente','bail','lease'
+#'','agreement','memorandum of understanding','entente','protocole d’entente','memorandum_of_understanding'
+#'','agreement','nondisclosure agreement','entente','accord de non divulgation','nondisclosure_agreement'
+#'','agreement','service-level agreement','entente','entente de niveau de service','service-level_agreement'
+#'','affidavit','','affidavit','','affidavit'
+#'','application','--','demande','--','application'
+#'API','api','','api','',''
+#'','architectural or technical design','--','conception architecturale ou technique','--','architectural_or_technical_design'
+#'','article','--','article','--','article'
+#'','assessment','--','évaluation','--','assessment'
+#'','assessment','audit','évaluation','audit','audit'
+#'','assessment','environmental assessment','évaluation','évaluation environnementale','environmental_assessment'
+#'','assessment','examination','évaluation','examen','examination'
+#'','assessment','gap assessment','évaluation','évaluation des écarts','gap_assessment'
+#'','assessment','lessons learned','évaluation','leçons apprises','lessons_learned'
+#'','assessment','performance indicator','évaluation','indicateur de rendement','performance_indicator'
+#'','assessment','risk assessment','évaluation','évaluation des risques','risk_assessment'
+#'','biography','--','biographie','--','biography'
+#'','briefing material','--','matériel de breffage','--','briefing_material'
+#'','briefing material','backgrounder','matériel de breffage','précis d’information','backgrounder'
+#'','business case','--','analyse de rentabilisation','--','business_case'
+#'','claim','','réclamation','','claim'
+#'','comments','--','commentaires','--','comments'
+#'','conference proceedings','--','actes de la conférence','--','conference_proceedings'
+#'','consultation','--','consultation','--','consultation'
+#'','contact information','--','coordonnées','--','contact_information'
+#'','correspondence','--','correspondance','--','correspondence'
+#'','correspondence','ministerial correspondence','correspondance','correspondance ministérielle','ministerial_correspondence'
+#'','correspondence','memorandum','correspondance','note de service','memorandum'
+#'','dataset','--','jeu de données','--','dataset'
+#'','delegation of authority','--','délégation des pouvoirs','--','delegation_of_authority'
+#'','educational material','--','matériel pédagogique','--','educational_material'
+#'','employment opportunity','--','possibilité d’emploi','--','employment_opportunity'
+#'','event','--','événement','--','event'
+#'','fact sheet','--','feuille de renseignements','--','fact_sheet'
+#'','financial material','--','document financier','--','financial_material'
+#'','financial material','budget','document financier','budget','budget'
+#'','financial material','funding proposal','document financier','proposition de financement','funding_proposal'
+#'','financial material','invoice','document financier','facture','invoice'
+#'','financial material','financial statement','document financier','états financiers','financial_statement'
+#'','form','--','formulaire','--','form'
+#'','framework','--','cadre','--','framework'
+#'','geospatial material','--','matériel géospatial','--','geospatial_material'
+#'Supporting Document','guide','--','guide','--','guide'
+#'','guide','best practices','guide','pratiques exemplaires','best_practices'
+#'','intellectual property statement','','Énoncé sur la propriété intellectuelle','','intellectual_property_statement'
+#'','legal complaint','--','plainte légale','--','legal_complaint'
+#'','legal opinion','--','avis juridique','--','legal_opinion'
+#'','legislation and regulations','--','lois et règlements','--','legislation_and_regulations'
+#'','licenses and permits','','licences et permis','','licenses_and_permits'
+#'','literary material','--','ouvrages littéraires','--','literary_material'
+#'','media release','statement','communiqué de presse','énoncé','statement'
+#'','media release','--','communiqué de presse','--','media_release'
+#'','meeting material','--','documentation de la réunion','--','meeting_material'
+#'','meeting material','agenda','documentation de la réunion','programme','agenda'
+#'','meeting material','minutes','documentation de la réunion','procès-verbaux','minutes'
+#'','memorandum to Cabinet','--','mémoire au Cabinet','--','memorandum_to_cabinet'
+#'','multimedia resource','','ressource multimédia','','multimedia_resource'
+#'','notice','--','avis','--','notice'
+#'','organizational description','--','description organisationnelle','--','organizational_description'
+#'','plan','--','plan','--','plan'
+#'','plan','business plan','plan','plan d’activités','business_plan'
+#'','plan','strategic plan','plan','plan stratégique','strategic_plan'
+#'','policy','--','politique','--','policy'
+#'','policy','white paper','politique','livre blanc','white_paper'
+#'','presentation','--','présentation','--','presentation'
+#'','procedure','--','procédure','--','procedure'
+#'','profile','--','profil','--','profile'
+#'','project material','--','documents du projet','--','project_material'
+#'','project material','project charter','documents du projet','charte de projet','project_charter'
+#'','project material','project plan','documents du projet','plan du projet','project_plan'
+#'','project material','project proposal','documents du projet','proposition de projet','project_proposal'
+#'','promotional material','--','documents promotionnels','--','promotional_material'
+#'','publication','','publication','','publication'
+#'','Q & A','FAQ','Q et R','foire aux questions','faq'
+#'','record of decision','--','compte rendu des décisions','--','record_of_decision'
+#'','report','--','rapport','--','report'
+#'','report','annual report','rapport','rapport annuel','annual_report'
+#'','report','interim report','rapport','rapport d’étape','interim_report'
+#'','research proposal','--','projet de recherche','--','research_proposal'
+#'','resource list','','liste de référence','','resource_list'
+#'','routing slip','','bordereau d’acheminement','','routing_slip'
+#'','Social media resource','blog entry','ressources des médias sociaux','entrée de blogue','blog_entry'
+#'','sound recording','','enregistrement sonore','','sound_recording'
+#'','specification','--','spécification','--','specification'
+#'','statistics','--','statistiques','--','statistics'
+#'','still image','','image fixe','','still_image'
+#'','submission','--','présentation','--','submission'
+#'','survey','--','sondage','--','survey'
+#'Data Dictionary','terminology','terminologie','--','terminology'
+#'','terms of reference','--','mandat','--','terms_of_reference'
+#'','tool','','outil','','tool'
+#'','training material','','matériel didactique','','training_material'
+#'','transcript','--','transcription','--','transcript'
+#'','web service','','service web','',''
+#'','website','','site Web','','website'
+#'','workflow','--','flux des travaux','--','workflow'
+#]
 
 
 ResourceType = [
     'abstract',
-    'agreement',
-    'contractual_material',
-    'intergovernmental_agreement',
-    'lease',
-    'memorandum_of_understanding',
-    'nondisclosure_agreement',
-    'service-level_agreement',
     'affidavit',
+    'agenda',
+    'agreement',
+    'annual_report',
     'application',
     'architectural_or_technical_design',
     'article',
     'assessment',
     'audit',
-    'environmental_assessment',
-    'examination',
-    'gap_assessment',
-    'lessons_learned',
-    'performance_indicator',
-    'risk_assessment',
-    'biography',
-    'briefing_material',
     'backgrounder',
+    'best_practices',
+    'biography',
+    'blog_entry',
+    'briefing_material',
+    'budget',
     'business_case',
+    'business_plan',
     'claim',
     'comments',
     'conference_proceedings',
     'consultation',
     'contact_information',
+    'contractual_material',
     'correspondence',
-    'ministerial_correspondence',
-    'memorandum',
     'dataset',
     'delegation_of_authority',
     'educational_material',
     'employment_opportunity',
+    'environmental_assessment',
     'event',
+    'examination',
     'fact_sheet',
+    'faq',
     'financial_material',
-    'budget',
-    'funding_proposal',
-    'invoice',
     'financial_statement',
     'form',
     'framework',
+    'funding_proposal',
+    'gap_assessment',
     'geospatial_material',
     'guide',
-    'best_practices',
     'intellectual_property_statement',
+    'intergovernmental_agreement',
+    'interim_report',
+    'invoice',
+    'lease',
     'legal_complaint',
     'legal_opinion',
     'legislation_and_regulations',
+    'lessons_learned',
     'licenses_and_permits',
     'literary_material',
-    'statement',
     'media_release',
     'meeting_material',
-    'agenda',
-    'minutes',
+    'memorandum',
+    'memorandum_of_understanding',
     'memorandum_to_cabinet',
+    'ministerial_correspondence',
+    'minutes',
     'multimedia_resource',
+    'nondisclosure_agreement',
     'notice',
     'organizational_description',
+    'performance_indicator',
     'plan',
-    'business_plan',
-    'strategic_plan',
     'policy',
-    'white_paper',
     'presentation',
     'procedure',
     'profile',
-    'project_material',
     'project_charter',
+    'project_material',
     'project_plan',
     'project_proposal',
     'promotional_material',
     'publication',
-    'faq',
     'record_of_decision',
     'report',
-    'annual_report',
-    'interim_report',
     'research_proposal',
     'resource_list',
+    'risk_assessment',
     'routing_slip',
-    'blog_entry',
+    'service-level_agreement',
     'sound_recording',
     'specification',
+    'statement',
     'statistics',
     'still_image',
+    'strategic_plan',
     'submission',
     'survey',
     'terminology',
@@ -2176,22 +2301,125 @@ ResourceType = [
     'training_material',
     'transcript',
     'website',
+    'white_paper',
     'workflow',
     'web_service'
+
+#    'abstract',
+#    'agreement',
+#    'contractual_material',
+#    'intergovernmental_agreement',
+#    'lease',
+#    'memorandum_of_understanding',
+#    'nondisclosure_agreement',
+#    'service-level_agreement',
+#    'affidavit',
+#    'application',
+#    'architectural_or_technical_design',
+#    'article',
+#    'assessment',
+#    'audit',
+#    'environmental_assessment',
+#    'examination',
+#    'gap_assessment',
+#    'lessons_learned',
+#    'performance_indicator',
+#    'risk_assessment',
+#    'biography',
+#    'briefing_material',
+#    'backgrounder',
+#    'business_case',
+#    'claim',
+#    'comments',
+#    'conference_proceedings',
+#    'consultation',
+#    'contact_information',
+#    'correspondence',
+#    'ministerial_correspondence',
+#    'memorandum',
+#    'dataset',
+#    'delegation_of_authority',
+#    'educational_material',
+#    'employment_opportunity',
+#    'event',
+#    'fact_sheet',
+#    'financial_material',
+#    'budget',
+#    'funding_proposal',
+#    'invoice',
+#    'financial_statement',
+#    'form',
+#    'framework',
+#    'geospatial_material',
+#    'guide',
+#    'best_practices',
+#    'intellectual_property_statement',
+#    'legal_complaint',
+#    'legal_opinion',
+#    'legislation_and_regulations',
+#    'licenses_and_permits',
+#    'literary_material',
+#    'statement',
+#    'media_release',
+#    'meeting_material',
+#    'agenda',
+#    'minutes',
+#    'memorandum_to_cabinet',
+#    'multimedia_resource',
+#    'notice',
+#    'organizational_description',
+#    'plan',
+#    'business_plan',
+#    'strategic_plan',
+#    'policy',
+#    'white_paper',
+#    'presentation',
+#    'procedure',
+#    'profile',
+#    'project_material',
+#    'project_charter',
+#    'project_plan',
+#    'project_proposal',
+#    'promotional_material',
+#    'publication',
+#    'faq',
+#    'record_of_decision',
+#    'report',
+#    'annual_report',
+#    'interim_report',
+#    'research_proposal',
+#    'resource_list',
+#    'routing_slip',
+#    'blog_entry',
+#    'sound_recording',
+#    'specification',
+#    'statistics',
+#    'still_image',
+#    'submission',
+#    'survey',
+#    'terminology',
+#    'terms_of_reference',
+#    'tool',
+#    'training_material',
+#    'transcript',
+#    'website',
+#    'workflow',
+#    'web_service'
 ]
 
 CL_Formats = [
     'AAC',
     'AIFF',
-    'AMF',
-    'API',
+    'APK',
     'ASCII Grid',
-    'ASCII Text',
+    'ACII Text',
     'AVI',
     'BMP',
     'BWF',
+    'CCT',
     'CDED ASCII',
     'CDR',
+    'COD',
     'CSV',
     'DBF',
     'DICOM',
@@ -2199,7 +2427,7 @@ CL_Formats = [
     'DOC',
     'DOCX',
     'DXF',
-    'EOO',
+    'E00',
     'ECW',
     'EDI',
     'EMF',
@@ -2208,7 +2436,7 @@ CL_Formats = [
     'EPS',
     'ESRI REST',
     'EXE',
-    'FGDB / GDB',
+    'FGDB/GDB[w1] ',
     'Flat raster binary',
     'GeoPDF',
     'GeoRSS',
@@ -2218,20 +2446,20 @@ CL_Formats = [
     'HDF',
     'HTML',
     'IATI',
+    'IPA',
     'JFIF',
-    'JPEG 2000',
+    'JP2',
     'JPG',
-    'JPG2',
     'JSON',
-    'JSON Lines ',
+    'JSONL',
     'KML',
+    'KMZ',
     'MFX',
     'MOV',
     'MPEG',
     'MPEG-1',
     'MP3',
     'NetCDF',
-    'ODF',
     'ODP',
     'ODS',
     'ODT',
@@ -2244,12 +2472,10 @@ CL_Formats = [
     'RDFa',
     'RSS',
     'RTF',
-    'SAR / CCT',
+    'SAR',
     'SAV',
     'SEGY',
     'SHP',
-    'SLS',
-    'SLSM',
     'SQL',
     'SVG',
     'TIFF',
@@ -2261,6 +2487,7 @@ CL_Formats = [
     'WMV',
     'XML',
     'XLS',
+    'XLSM',
     'ZIP'
 ]
 
