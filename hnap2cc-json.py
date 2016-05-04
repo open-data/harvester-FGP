@@ -1003,11 +1003,11 @@ def main():
         json_record[schema_ref["61"]['CKAN API property']] = ','.join(
             aggregateDataSetIdentifier_array)
 
-# CC::OpenMaps-62 Aggregate Dataset Identifier
+# CC::OpenMaps-62 Spatial Representation Type
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["61"])
+        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["62"])
 
-        json_record[schema_ref["61"]['CKAN API property']] = {}
+        json_record[schema_ref["62"]['CKAN API property']] = {}
         spatialRepresentationType_array = []
 
         if value:
@@ -1024,7 +1024,7 @@ def main():
                 else:
                     spatialRepresentationType_array.append(termsValue[0])
 
-        json_record[schema_ref["61"]['CKAN API property']] = ','.join(
+        json_record[schema_ref["62"]['CKAN API property']] = ','.join(
             spatialRepresentationType_array)
 
 # CC::OpenMaps-63 Jurisdiction
