@@ -19,9 +19,8 @@ import codecs
 
 ##################################################
 # TL err/dbg
-error_output  = []
+error_output = []
 error_records = {}
-debug_output  = {}
 
 ##################################################
 # Process the command request
@@ -95,7 +94,6 @@ def main():
     json_records = []
     for record in records:
         json_record = {}
-        debug_output = {}
 
 ##################################################
 # HNAP CORE LANGUAGE
@@ -1384,19 +1382,6 @@ def main():
         #print utf_8_output
         output.write(utf_8_output+"\n")
     output.close()
-
-#    print ""
-#    print "DEBUG"
-#
-#    # Dump Errors to Screen
-#    # print "\nOGDMES\n"
-#    for key, value in sorted(debug_output.items()):
-#       print key + ':',
-#       if isinstance(value, unicode):
-#           value = value.encode('utf-8')
-#       print value
-#
-
 
     # Write JSON Lines to files
     print "Total ERRS:"+str(len(error_output))
