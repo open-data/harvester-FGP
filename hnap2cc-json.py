@@ -1251,7 +1251,6 @@ def main():
                     # language_str = ','.join(languages_out)
                     language_str = languages_out[0]
 
-
                     #print res_contentType.strip()
                     json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
                     #XXX Super duper hack
@@ -1448,9 +1447,7 @@ def sanitySingle(pre, values):
     if len(values) > 1:
         reportError(
             pre +
-            ',multiple of a single value,"' +
-            ','.join(values) +
-            '"')
+            ',"multiple of a single value","'.join(values)+'"')
         return False
     return True
 # Sanity check: validate the date
@@ -1563,13 +1560,13 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
     #    print "TEST MANDATORY:"+str(len(tmp))
 
         if not sanityMandatory(
-            HNAP_fileIdentifier + ',' +
-            schema_ref['CKAN API property'],
+            '"'+HNAP_fileIdentifier + '","' +
+            schema_ref['CKAN API property'] +
+            '"',
             tmp
         ):
             reportError(
-                '"'+HNAP_fileIdentifier +
-                '","' +
+                '"'+HNAP_fileIdentifier + '","' +
                 schema_ref['CKAN API property'] +
                 '","Missing mandatory property",""')
     #        print " - FAIL MANDATORY"
@@ -1579,13 +1576,14 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
 
     #print "PAST MANDATORY:"+str(len(tmp))
 
-    if schema_ref['Occurrences'] == 'M':
-        print "BAD OCCURENCES:M:"+schema_ref['CKAN API property']
+    #if schema_ref['Occurrences'] == 'M':
+    #    print "BAD OCCURENCES:M:"+schema_ref['CKAN API property']
     if schema_ref['Occurrences'] == 'S':
     #    print "TEST SINGLE:"+str(len(tmp))
         if not sanitySingle(
-            HNAP_fileIdentifier + ',' +
-            schema_ref['CKAN API property'],
+            '"'+ HNAP_fileIdentifier + '","' +
+            schema_ref['CKAN API property'] +
+            '"',
             tmp
         ):
             return False
