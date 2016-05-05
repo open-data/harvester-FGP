@@ -319,7 +319,15 @@ def main():
                     if termsValue:
                         valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
                         break
-            json_record[schema_ref["16"]['CKAN API property']] = ','.join(valid_orgs)
+
+            if len(valid_orgs) < 1:
+                reportError(
+                    HNAP_fileIdentifier,[
+                        schema_ref["16"]['CKAN API property'],
+                        'No valid orgs found '+org_string.strip()
+                    ])
+            else:
+                json_record[schema_ref["16"]['CKAN API property']] = ','.join(valid_orgs)
 
 # CC::OpenMaps-17 Publisher - Organization Name at Publication (English)
 #       CKAN defined/provided
