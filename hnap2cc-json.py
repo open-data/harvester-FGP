@@ -1244,6 +1244,7 @@ def main():
                 json_record_resource[schema_ref["74"]['CKAN API property']] = value
 
 # CC::OpenMaps-75 Title (English)
+# XXX Need to confirm why this is not included
 #            json_record[schema_ref["75"]['CKAN API property']] = {}
 #
 #            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["75"])
@@ -1251,6 +1252,7 @@ def main():
 #                json_record[schema_ref["75"]['CKAN API property']][CKAN_primary_lang] = value
 
 # CC::OpenMaps-76 Title (French)
+# XXX Need to confirm why this is not included
 #            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["76"])
 #            if value:
 #                json_record[schema_ref["75"]['CKAN API property']][CKAN_secondary_lang] = value
