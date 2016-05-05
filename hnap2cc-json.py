@@ -75,7 +75,7 @@ records_root = ("/csw:GetRecordsResponse/"
                 "csw:SearchResults/"
                 "gmd:MD_Metadata")
 
-source_hnap = ("csw.open.canada.ca/"
+source_hnap = ("csw.open.canada.ca/geonetwork/srv/"
                "csw?service=CSW"
                "&version=2.0.2"
                "&request=GetRecordById"
