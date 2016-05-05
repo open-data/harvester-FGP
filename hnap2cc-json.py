@@ -57,7 +57,6 @@ with open(schema_file, 'rb') as f:
     for row in reader:
         if row[0] == 'Property ID':
             continue
-        # print row
         schema_ref[row[0]] = {}
         schema_ref[row[0]]['Property ID'] = row[0]
         schema_ref[row[0]]['CKAN API property'] = row[1]
@@ -70,7 +69,7 @@ with open(schema_file, 'rb') as f:
         schema_ref[row[0]]['FGP XPATH'] = unicode(row[8], 'utf-8')
         schema_ref[row[0]]['RegEx Filter'] = unicode(row[9], 'utf-8')
 
-# records_root   = "/gmd:MD_Metadata"
+
 records_root = ("/csw:GetRecordsResponse/"
                 "csw:SearchResults/"
                 "gmd:MD_Metadata")
@@ -138,8 +137,6 @@ def main():
                 HNAP_fileIdentifier =\
                 sanityFirst(tmp)
 
-        #print HNAP_fileIdentifier
-        #continue
 ##################################################
 # Point of no return
 # fail out if you don't have either a primary language or ID
@@ -147,8 +144,6 @@ def main():
 
         if HNAP_primary_language is False or HNAP_fileIdentifier is False:
             break
-
-        #print "Creating: "+str(HNAP_fileIdentifier)
 
 # From here on in continue if you can and collect as many errors as
 # possible for FGP Help desk.  We awant to have a full report of issues
@@ -203,7 +198,6 @@ def main():
         ][CKAN_secondary_lang] = ','.join(second_vals)
 
 # CC::OpenMaps-08 Source Metadata Record Date Stamp
-
         tmp = fetchXMLValues(record, schema_ref["08a"]['FGP XPATH'])
         values = list(set(tmp))
         if len(values) < 1:
@@ -287,7 +281,6 @@ def main():
             attempt += "Is english value ["+str(len(value))+"]"
             for single_value in value:            
                 if re.search("^Government of Canada;", single_value):
-                    #org_string = value
                     org_strings.append(single_value)
                 else:
                     attempt += " but no GoC prefix ["+single_value+"]"
@@ -300,30 +293,9 @@ def main():
             attempt += ", french ["+str(len(value))+"]"
             for single_value in value:            
                 if re.search("^Government du Canada;", single_value):
-                    #org_string = value
                     org_strings.append(single_value)
                 else:
                     attempt += " but no GdC ["+single_value+"]"
-
-
-#        if len(org_strings) == '':
-#            value = fetch_FGP_value(
-#                record, HNAP_fileIdentifier, schema_ref["16b"])
-#            if not value:
-#                attempt += ", no french value"
-#            else:
-#                attempt += ", french"
-#                if re.search("^Government du Canada;", value):
-#                    org_string = value
-#                else:
-#                    attempt += " but no GdC ["+value+"]"
-#
-#        if org_string == '':
-#            reportError(
-#                HNAP_fileIdentifier +
-#                ',' +
-#                schema_ref["16"]['CKAN API property'] +
-#                ',"Bad organizationName, no Government of Canada","'+attempt+'"')
 
         if len(org_strings) < 1:
             reportError(
@@ -336,8 +308,6 @@ def main():
             for org_string in org_strings:
                 GOC_Structure = org_string.strip().split(';')
                 del GOC_Structure[0]
-
-                # print GOC_Structure
 
                 # At ths point you have ditched GOC and your checking for good
                 # dept names
@@ -358,7 +328,6 @@ def main():
 #       CKAN defined/provided
 # CC::OpenMaps-20 Publisher - Organization Section Name (French)
 #       CKAN defined/provided
-
 
 # CC::OpenMaps-21 Creator
 
@@ -619,7 +588,6 @@ def main():
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["36"])
         if value:
             for subject in value:
-                #print "SUB:"+subject
                 termsValue = fetchCLValue(
                     subject.strip(), CL_Subjects)
                 if termsValue:
@@ -722,12 +690,8 @@ def main():
         if value:
 
             check_for_blank = value
-            #print "!111-"+check_for_blank
             if check_for_blank == '':
                 check_for_blank = '9999-09-09'
-
-            #print "!222-"+check_for_blank
-            #print "!333-"+maskDate(check_for_blank)
 
             if sanityDate(
                 HNAP_fileIdentifier +
@@ -969,10 +933,8 @@ def main():
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["60"])
         # Not mandatory, process if you have it
         if value and len(value) > 0:
-#            print "A2:"+value
             # You have to itterate to find a valid one, not neccesaraly the
             for associationType in value:
-                #print "A3:"+associationType
                 # Can you find the CL entry?
                 termsValue = fetchCLValue(
                     associationType, napDS_AssociationTypeCode)
@@ -991,7 +953,6 @@ def main():
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["61"])
         # Not mandatory, process if you have it
         if value and len(value) > 0:
-            #print "VAL VAL:"+value
             for aggregateDataSetIdentifier in value:
                 (primary, secondary) =\
                     aggregateDataSetIdentifier.strip().split(';')
@@ -1009,9 +970,8 @@ def main():
         spatialRepresentationType_array = []
 
         if value:
-            # You have to itterate to find a valid one, not neccesaraly the
-            # first
-            #print "VVV___"+value
+            # You have to itterate to find a valid one,
+            # not neccesaraly the first
             for spatialRepresentationType in value:
                 # Can you find the CL entry?
                 termsValue = fetchCLValue(
@@ -1135,7 +1095,6 @@ def main():
 # CC::OpenMaps-65 Unique Identifier
 # System generated
 
-
 #### Resources
 
 # CC::OpenMaps-68 Date Published
@@ -1166,7 +1125,6 @@ def main():
 # Oh have mercy my friend J.
 #
 # How about September 1?
-#
 
         json_record['resources'] = []
         record_resources = fetchXMLArray(
@@ -1190,6 +1148,7 @@ def main():
             value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["66"])
             if value:
                 json_record_resource[schema_ref["66"]['CKAN API property']][CKAN_primary_lang] = value
+
 # CC::OpenMaps-67 Title (English)
 
             value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["67"])
@@ -1203,9 +1162,6 @@ def main():
             value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["69-70-73"])
             if value:
                 description_text = value.strip()
-
-
-                #print description_text
 
                 if description_text.count(';') != 2:
                     reportError(
@@ -1237,7 +1193,6 @@ def main():
                      res_language) = description_text.split(';')
 
                     languages_in = res_language.strip().split(',')
-                    #print "LANG IN["+HNAP_fileIdentifier+"]:"+res_language.strip()
                     languages_out = []
                     for language in languages_in:
                         if language.strip() == 'eng':
@@ -1246,10 +1201,8 @@ def main():
                             languages_out.append('fr')
                         if language.strip() == 'zxx': # Non linguistic
                             languages_out.append('zxx')
-                    # language_str = ','.join(languages_out)
                     language_str = languages_out[0]
 
-                    #print res_contentType.strip()
                     json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
                     #XXX Super duper hack
                     if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
@@ -1261,7 +1214,6 @@ def main():
                     if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
                         json_record_resource[schema_ref["69"]['CKAN API property']] = 'web_service'
 
-                    #print "x0x0x0:"+json_record_resource[schema_ref["69"]['CKAN API property'].lower()]
                     json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
                     json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
             else:
@@ -1288,9 +1240,7 @@ def main():
                     schema_ref["69-70-73"]['CKAN API property'] +
                     '","invalid resource type","'+json_record_resource[schema_ref["69"]['CKAN API property']]+'",""')
 
-            #print "---"+json_record_resource[schema_ref["70"]['CKAN API property']]
             if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
-                #print "bad format"
                 reportError(
                     '"'+HNAP_fileIdentifier +
                     '","' +
@@ -1299,7 +1249,6 @@ def main():
 
 # CC::OpenMaps-71 Character Set
 # TBS 2016-04-13: Not in HNAP, we can skip
-
 # CC::OpenMaps-74 Size
 # TBS 2016-04-13: Not in HNAP, we can skip
 
@@ -1309,9 +1258,7 @@ def main():
             if value:
                 json_record_resource[schema_ref["74"]['CKAN API property']] = value
 
-
 # CC::OpenMaps-75 Title (English)
-
 #            json_record[schema_ref["75"]['CKAN API property']] = {}
 #
 #            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["75"])
@@ -1319,24 +1266,20 @@ def main():
 #                json_record[schema_ref["75"]['CKAN API property']][CKAN_primary_lang] = value
 
 # CC::OpenMaps-76 Title (French)
-
 #            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["76"])
 #            if value:
 #                json_record[schema_ref["75"]['CKAN API property']][CKAN_secondary_lang] = value
 
 # CC::OpenMaps-76 Record Type
 # TBS 2016-04-13: Not in HNAP, we can skip
-
 # CC::OpenMaps-78 Relationship Type
 # TBS 2016-04-13: Not in HNAP, we can skip
-
 # CC::OpenMaps-79 Language
 # TBS 2016-04-13: Not in HNAP, we can skip
-
 # CC::OpenMaps-80 Record URL
 # TBS 2016-04-13: Not in HNAP, we can skip
 
-            #print "  - resource: "+json_record_resource['name_translated']['en']
+            # Append the resource to the Open Maps record
             json_record['resources'].append(json_record_resource)
 
 ##################################################
@@ -1364,7 +1307,6 @@ def main():
 ##################################################
 ##################################################
 
-
     print ""
     print "Creating import JSON Lines file"
     print ""
@@ -1390,14 +1332,6 @@ def main():
         #output.write(unicode(error+"\n", 'utf-8'))
         output.write(error+u"\n")
     output.close()
-
-#    print ""
-#    if len(error_output) > 0:
-#       print "\nERRORS\n"
-#       sorted(error_output)
-#       for error in error_output:
-#           print unicode(error, 'utf-8')
-
 
 ##################################################
 # Reporting, Sanity and Access functions
@@ -1519,21 +1453,16 @@ def fetchCLValue(SRCH_key, CL_array):
     return None
 # Schema aware fetch for generic items
 def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
-    #print "HNAP_fileIdentifier:"+HNAP_fileIdentifier
-    #print schema_ref['Schema Name English']
     if schema_ref['Value Type'] == 'value':
         tmp = fetchXMLValues(
             record,
             schema_ref["FGP XPATH"])
-    #    print "YES VALUE:"+str(len(tmp))
     elif schema_ref['Value Type'] == 'attribute':
         tmp = fetchXMLAttribute(
             record,
             schema_ref["FGP XPATH"],
             "codeListValue")
-    #    print "YES ATTRIBUTE:"+str(len(tmp))
     else:
-        #print 'lkajsldfjlsdjfka'+schema_ref['Value Type']
         reportError(
             '"'+HNAP_fileIdentifier +
             '","' +
@@ -1542,8 +1471,6 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
         return False
 
     if schema_ref['Requirement'] == 'M':
-    #    print "TEST MANDATORY:"+str(len(tmp))
-
         if not sanityMandatory(
             '"'+HNAP_fileIdentifier + '","' +
             schema_ref['CKAN API property'] +
@@ -1554,17 +1481,8 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
                 '"'+HNAP_fileIdentifier + '","' +
                 schema_ref['CKAN API property'] +
                 '","Missing mandatory property",""')
-    #        print " - FAIL MANDATORY"
             return False
-    #    else:
-    #        print " - PASS MANDATORY:"+str(len(tmp))
-
-    #print "PAST MANDATORY:"+str(len(tmp))
-
-    #if schema_ref['Occurrences'] == 'M':
-    #    print "BAD OCCURENCES:M:"+schema_ref['CKAN API property']
     if schema_ref['Occurrences'] == 'S':
-    #    print "TEST SINGLE:"+str(len(tmp))
         if not sanitySingle(
             '"'+ HNAP_fileIdentifier + '","' +
             schema_ref['CKAN API property'] +
@@ -1573,15 +1491,9 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
         ):
             return False
         else:
-    #        print " - PASS SINGLE:"+str(len(tmp))
             return sanityFirst(tmp)
 
-    #print "PAST SINGLE:"+str(len(tmp))
-
-
-
     return tmp
-
 
 ##################################################
 # FGP specific Controled lists
@@ -2288,107 +2200,6 @@ ResourceType = [
     'white_paper',
     'workflow',
     'web_service'
-
-#    'abstract',
-#    'agreement',
-#    'contractual_material',
-#    'intergovernmental_agreement',
-#    'lease',
-#    'memorandum_of_understanding',
-#    'nondisclosure_agreement',
-#    'service-level_agreement',
-#    'affidavit',
-#    'application',
-#    'architectural_or_technical_design',
-#    'article',
-#    'assessment',
-#    'audit',
-#    'environmental_assessment',
-#    'examination',
-#    'gap_assessment',
-#    'lessons_learned',
-#    'performance_indicator',
-#    'risk_assessment',
-#    'biography',
-#    'briefing_material',
-#    'backgrounder',
-#    'business_case',
-#    'claim',
-#    'comments',
-#    'conference_proceedings',
-#    'consultation',
-#    'contact_information',
-#    'correspondence',
-#    'ministerial_correspondence',
-#    'memorandum',
-#    'dataset',
-#    'delegation_of_authority',
-#    'educational_material',
-#    'employment_opportunity',
-#    'event',
-#    'fact_sheet',
-#    'financial_material',
-#    'budget',
-#    'funding_proposal',
-#    'invoice',
-#    'financial_statement',
-#    'form',
-#    'framework',
-#    'geospatial_material',
-#    'guide',
-#    'best_practices',
-#    'intellectual_property_statement',
-#    'legal_complaint',
-#    'legal_opinion',
-#    'legislation_and_regulations',
-#    'licenses_and_permits',
-#    'literary_material',
-#    'statement',
-#    'media_release',
-#    'meeting_material',
-#    'agenda',
-#    'minutes',
-#    'memorandum_to_cabinet',
-#    'multimedia_resource',
-#    'notice',
-#    'organizational_description',
-#    'plan',
-#    'business_plan',
-#    'strategic_plan',
-#    'policy',
-#    'white_paper',
-#    'presentation',
-#    'procedure',
-#    'profile',
-#    'project_material',
-#    'project_charter',
-#    'project_plan',
-#    'project_proposal',
-#    'promotional_material',
-#    'publication',
-#    'faq',
-#    'record_of_decision',
-#    'report',
-#    'annual_report',
-#    'interim_report',
-#    'research_proposal',
-#    'resource_list',
-#    'routing_slip',
-#    'blog_entry',
-#    'sound_recording',
-#    'specification',
-#    'statistics',
-#    'still_image',
-#    'submission',
-#    'survey',
-#    'terminology',
-#    'terms_of_reference',
-#    'tool',
-#    'training_material',
-#    'transcript',
-#    'website',
-#    'workflow',
-#    'web_service'
 ]
 
 CL_Formats = [
