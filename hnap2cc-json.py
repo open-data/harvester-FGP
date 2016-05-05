@@ -101,7 +101,7 @@ def main():
 # for errors if the primary language is not certain
 
         tmp = fetchXMLValues(record, schema_ref["12"]['FGP XPATH'])
-        if sanitySingle('NOID,HNAP Priamry Language', tmp) is False:
+        if sanitySingle('NOID', ['HNAP Priamry Language'], tmp) is False:
             HNAP_primary_language = False
         else:
             HNAP_primary_language = sanityFirst(tmp).split(';')[0].strip()
@@ -130,7 +130,7 @@ def main():
 #       CKAN defined/provided
 # CC::OpenMaps-05 Metadata Record Identifier
         tmp = fetchXMLValues(record, schema_ref["05"]['FGP XPATH'])
-        if sanitySingle('NOID,fileIdentifier', tmp) is False:
+        if sanitySingle('NOID', ['fileIdentifier'], tmp) is False:
             HNAP_fileIdentifier = False
         else:
             json_record[schema_ref["05"]['CKAN API property']] =\
@@ -204,13 +204,13 @@ def main():
             tmp = fetchXMLValues(record, schema_ref["08b"]['FGP XPATH'])
 
         if sanityMandatory(
-            HNAP_fileIdentifier + ',' +
-            schema_ref["08"]['CKAN API property'],
+            HNAP_fileIdentifier,
+            [schema_ref["08"]['CKAN API property']],
             tmp
         ):
             if sanitySingle(
-                HNAP_fileIdentifier + ',' +
-                schema_ref["08"]['CKAN API property'],
+                HNAP_fileIdentifier,
+                [schema_ref["08"]['CKAN API property']],
                 tmp
             ):
                 # Might be a iso datetime
@@ -219,8 +219,8 @@ def main():
                     date_str = date_str.split('T')[0]
 
                 if sanityDate(
-                        HNAP_fileIdentifier + ',' +
-                        schema_ref["08"]['CKAN API property'],
+                        HNAP_fileIdentifier,
+                        [schema_ref["08"]['CKAN API property']],
                         date_str):
                     json_record[schema_ref["08"]['CKAN API property']] =\
                         date_str
@@ -279,7 +279,7 @@ def main():
             attempt += "No english value"
         else:
             attempt += "Is english value ["+str(len(value))+"]"
-            for single_value in value:            
+            for single_value in value:
                 if re.search("^Government of Canada;", single_value):
                     org_strings.append(single_value)
                 else:
@@ -291,7 +291,7 @@ def main():
             attempt += ", no french value"
         else:
             attempt += ", french ["+str(len(value))+"]"
-            for single_value in value:            
+            for single_value in value:
                 if re.search("^Government du Canada;", single_value):
                     org_strings.append(single_value)
                 else:
@@ -299,10 +299,11 @@ def main():
 
         if len(org_strings) < 1:
             reportError(
-                '"'+HNAP_fileIdentifier +
-                '","' +
-                schema_ref["16"]['CKAN API property'] +
-                '","Bad organizationName, no Government of Canada","'+attempt+'"')
+                HNAP_fileIdentifier,[
+                    schema_ref["16"]['CKAN API property'],
+                    "Bad organizationName, no Government of Canada",
+                    attempt
+                ])
         else:
             valid_orgs = []
             for org_string in org_strings:
@@ -380,10 +381,10 @@ def main():
                 termsValue = fetchCLValue(single_value, napCI_RoleCode)
                 if not termsValue:
                     reportError(
-                        '"'+HNAP_fileIdentifier +
-                        '","' +
-                        schema_ref["26"]['CKAN API property'] +
-                        '","Value not found in '+schema_ref["26"]['Reference']+'",""')
+                        HNAP_fileIdentifier,[
+                            schema_ref["26"]['CKAN API property'],
+                            'Value not found in '+schema_ref["26"]['Reference']
+                        ])
                 else:
                     primary_data.append(termsValue[0])
 
@@ -435,10 +436,10 @@ def main():
 
         if len(primary_data) < 1:
             reportError(
-                '"'+HNAP_fileIdentifier +
-                '","' +
-                schema_ref["29"]['CKAN API property'] +
-                '","Value not found in '+schema_ref["29"]['Reference']+'",""')
+                HNAP_fileIdentifier,[
+                    schema_ref["29"]['CKAN API property'],
+                    'Value not found in '+schema_ref["29"]['Reference']
+                ])
 
         json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_data)
 
@@ -481,10 +482,10 @@ def main():
 
         if len(secondary_data) < 1:
             reportError(
-                '"'+HNAP_fileIdentifier +
-                '","' +
-                schema_ref["30"]['CKAN API property'] +
-                '","Value not found in '+schema_ref["30"]['Reference']+'",""')
+                HNAP_fileIdentifier,[
+                    schema_ref["30"]['CKAN API property'],
+                    'Value not found in '+schema_ref["30"]['Reference']
+                ])
 
         json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang] = ','.join(secondary_data)
 
@@ -540,20 +541,19 @@ def main():
                 if len(single_value) >= 2:
                     if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
                         reportError(
-                            '"'+HNAP_fileIdentifier +
-                            '","' +
-                            schema_ref["34"]['CKAN API property'] +
-                            '-' + CKAN_primary_lang +
-                            '","Invalid character in Keyword","Must be alpha-numeric, space or \-_./;>+& ['+single_value+']"')
+                            HNAP_fileIdentifier,[
+                                schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                                "Invalid character in Keyword",
+                                'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
+                            ])
                     if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
                         json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
             if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["34"]['CKAN API property'] +
-                    CKAN_primary_lang +
-                    '","No keywords",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                        "No keywords"
+                    ])
 
 # CC::OpenMaps-35 Keywords (French)
 
@@ -567,20 +567,19 @@ def main():
                 if len(single_value) >= 2:
                     if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
                         reportError(
-                            '"'+HNAP_fileIdentifier +
-                            '","' +
-                            schema_ref["34"]['CKAN API property'] +
-                            '-' + CKAN_secondary_lang +
-                            '","Invalid character in Keyword","Must be alpha-numeric, space or \-_./;>+& ['+single_value+']"')
+                            HNAP_fileIdentifier,[
+                                schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                                "Invalid character in Keyword",
+                                'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
+                            ])
                     if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
                         json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
             if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["34"]['CKAN API property'] +
-                    CKAN_primary_lang +
-                    '","No keywords",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                        "No keywords"
+                    ])
 
 # CC::OpenMaps-36 Subject
 
@@ -596,10 +595,10 @@ def main():
 
             if len(subject_values) < 1:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["36"]['CKAN API property'] +
-                    '","Value not found in '+schema_ref["36"]['Reference']+'",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["36"]['CKAN API property'],
+                        'Value not found in '+schema_ref["36"]['Reference']
+                    ])
             else:
                 json_record[schema_ref["36"]['CKAN API property']] = list(set(subject_values))
 
@@ -617,10 +616,10 @@ def main():
 
             if len(topicCategory_values) < 1:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["37"]['CKAN API property'] +
-                    '","Value not found in '+schema_ref["37"]['Reference']+'",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["37"]['CKAN API property'],
+                        'Value not found in '+schema_ref["37"]['Reference']
+                    ])
             else:
                 json_record[schema_ref["37"]['CKAN API property']] = topicCategory_values
 
@@ -664,10 +663,9 @@ def main():
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["43"])
         if value:
             if sanityDate(
-                HNAP_fileIdentifier +
-                ',' +
-                schema_ref["43"]['CKAN API property'] +
-                'Start',
+                HNAP_fileIdentifier,[
+                    schema_ref["43"]['CKAN API property']+'-start'
+                ],
                 maskDate(value)
             ):
                 json_record[schema_ref["43"]['CKAN API property']] = maskDate(value)
@@ -694,10 +692,9 @@ def main():
                 check_for_blank = '9999-09-09'
 
             if sanityDate(
-                HNAP_fileIdentifier +
-                ',' +
-                schema_ref["44"]['CKAN API property'] +
-                'Start',
+                HNAP_fileIdentifier,[
+                    schema_ref["44"]['CKAN API property']+'-end'
+                ],
                 maskDate(check_for_blank)
             ):
                 json_record[schema_ref["44"]['CKAN API property']] = maskDate(check_for_blank)
@@ -710,10 +707,10 @@ def main():
             termsValue = fetchCLValue(value, napMD_MaintenanceFrequencyCode)
             if not termsValue:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["45"]['CKAN API property'] +
-                    '","Value not found in '+schema_ref["45"]['Reference']+'",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["45"]['CKAN API property'],
+                        'Value not found in '+schema_ref["45"]['Reference']
+                    ])
             else:
                 json_record[schema_ref["45"]['CKAN API property']] = termsValue[2]
 
@@ -747,24 +744,28 @@ def main():
                     input_type = input_type.strip()
                     if input_type == u'publication':
                         if sanityDate(
-                                HNAP_fileIdentifier +
-                                ','+schema_ref["46"]['CKAN API property'],
+                                HNAP_fileIdentifier,[
+                                    schema_ref["46"]['CKAN API property']
+                                ],
                                 maskDate(inVal)):
                             json_record[schema_ref["46"]['CKAN API property']] = maskDate(inVal)
                             break
 
                     if input_type == u'revision' or input_type == u'révision':
                         if sanityDate(
-                                HNAP_fileIdentifier +
-                                ','+schema_ref["47"]['CKAN API property'],
+                                HNAP_fileIdentifier,[
+                                    schema_ref["47"]['CKAN API property']
+                                ],
                                 maskDate(inVal)):
                             json_record[schema_ref["47"]['CKAN API property']] = maskDate(inVal)
                             break
 
         if 'date_published' not in json_record:
             reportError(
-                '"'+HNAP_fileIdentifier +
-                '","datePublished,madatory field missing",""')
+                HNAP_fileIdentifier,[
+                    schema_ref["37"]['CKAN API property'],
+                    'madatory field missing'
+                ])
 
 # CC::OpenMaps-48 Date Released
 # SYSTEM GENERATED
@@ -899,10 +900,10 @@ def main():
                 termsValue = fetchCLValue(single_value, napCI_RoleCode)
                 if not termsValue:
                     reportError(
-                        '"'+HNAP_fileIdentifier +
-                        '","' +
-                        schema_ref["57"]['CKAN API property'] +
-                        '","Value not found in '+schema_ref["57"]['Reference']+'",""')
+                        HNAP_fileIdentifier,[
+                            schema_ref["57"]['CKAN API property'],
+                            'Value not found in '+schema_ref["57"]['Reference']
+                        ])
                 else:
                     primary_vals.append('role;'+termsValue[0])
                     second_vals.append('role;'+termsValue[1])
@@ -919,10 +920,10 @@ def main():
             termsValue = fetchCLValue(value, napMD_ProgressCode)
             if not termsValue:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["59"]['CKAN API property'] +
-                    '","Value not found in '+schema_ref["59"]['Reference']+'",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["59"]['CKAN API property'],
+                        'Value not found in '+schema_ref["59"]['Reference']
+                    ])
             else:
                 json_record[schema_ref["59"]['CKAN API property']] = termsValue[0]
 
@@ -1165,29 +1166,11 @@ def main():
 
                 if description_text.count(';') != 2:
                     reportError(
-                        '"'+HNAP_fileIdentifier +
-                        '","' +
-                        schema_ref["69-70-73"]['CKAN API property'] +
-                        'contentType,"Error with source, should be ' +
-                        'contentType;format;lang,lang","' +
-                        description_text +
-                        '"')
-                    reportError(
-                        '"'+HNAP_fileIdentifier +
-                        '","' +
-                        schema_ref["69-70-73"]['CKAN API property'] +
-                        'format,"Error with source, should be contentType;' +
-                        'format;lang,lang","' +
-                        description_text +
-                        '"')
-                    reportError(
-                        '"'+HNAP_fileIdentifier +
-                        '","' +
-                        schema_ref["69-70-73"]['CKAN API property'] +
-                        'languages,"Error with source, should be ' +
-                        'contentType;format;lang,lang","' +
-                        description_text +
-                        '"')
+                        HNAP_fileIdentifier,[
+                            schema_ref["69-70-73"]['CKAN API property'],
+                            'Content, Format or Language missing, must be: contentType;format;lang,lang',
+                            description_text
+                        ])
                 else:
                     (res_contentType, res_format,
                      res_language) = description_text.split(';')
@@ -1218,34 +1201,36 @@ def main():
                     json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
             else:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["69-70-73"]['CKAN API property'] +
-                    '","format,madatory field missing",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["69-70-73"]['CKAN API property'],
+                        'format,madatory field missing'
+                    ])
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["69-70-73"]['CKAN API property'] +
-                    '","language,madatory field missing",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["69-70-73"]['CKAN API property'],
+                        'language,madatory field missing'
+                    ])
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["69-70-73"]['CKAN API property'] +
-                    '","contentType,madatory field missing",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["69-70-73"]['CKAN API property'],
+                        'contentType,madatory field missing'
+                    ])
 
             if json_record_resource[schema_ref["69"]['CKAN API property']].lower() not in ResourceType:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["69-70-73"]['CKAN API property'] +
-                    '","invalid resource type","'+json_record_resource[schema_ref["69"]['CKAN API property']]+'",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["69-70-73"]['CKAN API property'],
+                        'invalid resource type',
+                        json_record_resource[schema_ref["69"]['CKAN API property']]
+                    ])
 
             if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
                 reportError(
-                    '"'+HNAP_fileIdentifier +
-                    '","' +
-                    schema_ref["69-70-73"]['CKAN API property'] +
-                    '","invalid resource format","'+json_record_resource[schema_ref["70"]['CKAN API property']]+'",""')
+                    HNAP_fileIdentifier,[
+                        schema_ref["69-70-73"]['CKAN API property'],
+                        'invalid resource format',
+                        json_record_resource[schema_ref["70"]['CKAN API property']]
+                    ])
 
 # CC::OpenMaps-71 Character Set
 # TBS 2016-04-13: Not in HNAP, we can skip
@@ -1291,12 +1276,15 @@ def main():
 ##################################################
 ##################################################
 ##################################################
-        print "Appending: "+str(HNAP_fileIdentifier)
-        json_record['imso_approval'] = 'true'
-        json_record['ready_to_publish'] = 'true'
-        json_record['state'] = 'active'
-        #if error don't do this 
-        json_records.append(json_record)
+        if HNAP_fileIdentifier in error_records:
+            print "Reject: "+str(HNAP_fileIdentifier)
+        else:
+            print "Accept: "+str(HNAP_fileIdentifier)
+            json_record['imso_approval'] = 'true'
+            json_record['ready_to_publish'] = 'true'
+            json_record['state'] = 'active'
+            #if error don't do this 
+            json_records.append(json_record)
 ##################################################
 ##################################################
 ##################################################
@@ -1335,14 +1323,15 @@ def main():
 
 ##################################################
 # Reporting, Sanity and Access functions
-# reportError(errorText)
+# reportError(HNAP_fileIdentifier, errorInfo)
 # sanityMandatory(pre, values)
 # sanitySingle(pre, values)
 # sanityDate(pre, date_text)
 # sanityFirst(values)
 
 # Fire off an error to cmd line
-def reportError(errorText):
+def reportError(HNAP_fileIdentifier,errorInfo):
+    errorText = '"'+HNAP_fileIdentifier+'","'+'","'.join(errorInfo)+'"'
     global error_output
     global error_records
     #global OGDMES2ID
@@ -1350,37 +1339,43 @@ def reportError(errorText):
     if not isinstance(errorText, unicode):
         errorText = unicode(errorText, 'utf-8')
     error_output.append(errorText)
+    if HNAP_fileIdentifier not in error_records:
+        error_records[HNAP_fileIdentifier] = []
+    error_records[HNAP_fileIdentifier].append(errorText)
     #print len(error_output)
 # Sanity check: make sure the value exists
-def sanityMandatory(pre, values):
+def sanityMandatory(HNAP_fileIdentifier,errorInfo, values):
     values = list(set(values))
     if values is None or len(values) < 1:
-        reportError(
-            pre +
-            ',"madatory field missing or not found in controlled list",""')
+        errorInfo.append('madatory field missing or not found in controlled list')
+        reportError(HNAP_fileIdentifier,errorInfo)
         return False
     return True
 # Sanity check: make sure there is only one value
-def sanitySingle(pre, values):
+def sanitySingle(HNAP_fileIdentifier,errorInfo, values):
     values = list(set(values))
     if len(values) > 1:
-        reportError(
-            pre +
-            ',"multiple of a single value","'.join(values)+'"')
+        errorInfo.append('multiple of a single value')
+        errorInfo.append(','.join(values))
+        reportError(HNAP_fileIdentifier,errorInfo)
         return False
     return True
 # Sanity check: validate the date
-def sanityDate(pre, date_text):
+def sanityDate(HNAP_fileIdentifier,errorInfo, date_text):
     value = ''
     try:
         value = datetime.datetime.strptime(
             date_text,
             '%Y-%m-%d').isoformat().split('T')[0]
     except ValueError:
-        reportError(pre + ',"date is not valid","' + date_text + '"')
+        errorInfo.append('date is not valid')
+        errorInfo.append(date_text)
+        reportError(HNAP_fileIdentifier, errorInfo)
         return False
     if value != date_text:
-        reportError(pre + ',"date is not valid","' + date_text + '"')
+        errorInfo.append('date is not valid')
+        errorInfo.append(date_text)
+        reportError(HNAP_fileIdentifier, errorInfo)
         return False
     return True
 # Sanity value: extract the first value or blank string
@@ -1464,29 +1459,26 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             "codeListValue")
     else:
         reportError(
-            '"'+HNAP_fileIdentifier +
-            '","' +
-            schema_ref['CKAN API property'] +
-            '","FETCH on undefined Value Type","'+schema_ref['CKAN API property']+':'+schema_ref['Value Type']+'"')
+            HNAP_fileIdentifier,[
+                schema_ref['CKAN API property'],
+                'FETCH on undefined Value Type',
+                schema_ref['CKAN API property']+':'+schema_ref['Value Type']
+            ])
         return False
 
     if schema_ref['Requirement'] == 'M':
         if not sanityMandatory(
-            '"'+HNAP_fileIdentifier + '","' +
-            schema_ref['CKAN API property'] +
-            '"',
+            HNAP_fileIdentifier,[
+                schema_ref['CKAN API property']
+            ],
             tmp
         ):
-            reportError(
-                '"'+HNAP_fileIdentifier + '","' +
-                schema_ref['CKAN API property'] +
-                '","Missing mandatory property",""')
             return False
     if schema_ref['Occurrences'] == 'S':
         if not sanitySingle(
-            '"'+ HNAP_fileIdentifier + '","' +
-            schema_ref['CKAN API property'] +
-            '"',
+            HNAP_fileIdentifier,[
+                schema_ref['CKAN API property']
+            ],
             tmp
         ):
             return False
