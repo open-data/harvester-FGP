@@ -172,7 +172,7 @@ def main():
         json_record[schema_ref["06"]['CKAN API property']] = {}
         json_record[
             schema_ref["06"]['CKAN API property']
-        ][CKAN_primary_lang] = " \n".join(primary_vals)
+        ][CKAN_primary_lang] = ','.join(primary_vals)
 
 # CC::OpenMaps-07 Metadata Contact (French)
         second_vals = []
@@ -195,7 +195,7 @@ def main():
 
         json_record[
             schema_ref["06"]['CKAN API property']
-        ][CKAN_secondary_lang] = " \n".join(second_vals)
+        ][CKAN_secondary_lang] = ','.join(second_vals)
 
 # CC::OpenMaps-08 Source Metadata Record Date Stamp
         tmp = fetchXMLValues(record, schema_ref["08a"]['FGP XPATH'])
@@ -434,96 +434,90 @@ def main():
 
 # CC::OpenMaps-29 Contact Information (English)
 
-        json_record[schema_ref["29"]['CKAN API property']] = {}
-        json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = ''
-
-        primary_data = []
+        primary_vals = {}
+        primary_vals[CKAN_primary_lang] = {}
 
         # deliveryPoint
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29a"])
         if value:
             for single_value in value:
-                primary_data.append('deliveryPoint;'+single_value)
+                primary_vals[CKAN_primary_lang]['delivery_point'] = single_value
         # city
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29b"])
         if value:
             for single_value in value:
-                primary_data.append('city;'+single_value)
+                primary_vals[CKAN_primary_lang]['city'] = single_value
         # administrativeArea
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29c"])
         if value:
             for single_value in value:
-                primary_data.append('administrativeArea;'+single_value)
+                primary_vals[CKAN_primary_lang]['administrative_area'] = single_value
         # postalCode
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29d"])
         if value:
             for single_value in value:
-                primary_data.append('postalCode;'+single_value)
+                primary_vals[CKAN_primary_lang]['postal_code'] = single_value
         # country
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29e"])
         if value:
             for single_value in value:
-                primary_data.append('country;'+single_value)
+                primary_vals[CKAN_primary_lang]['country'] = single_value
         # electronicMailAddress
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29f"])
         if value:
             for single_value in value:
-                primary_data.append('electronicMailAddress;'+single_value)
+                primary_vals[CKAN_primary_lang]['electronic_mail_address'] = single_value
 
-        if len(primary_data) < 1:
+        if len(primary_vals[CKAN_primary_lang]) < 1:
             reportError(
                 HNAP_fileIdentifier,[
                     schema_ref["29"]['CKAN API property'],
                     'Value not found in '+schema_ref["29"]['Reference']
                 ])
 
-        json_record[schema_ref["29"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_data)
-
 # CC::OpenMaps-30 Contact Information (French)
 
-        json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang] = {}
-
-        secondary_data = []
+        primary_vals[CKAN_secondary_lang] = {}
 
         # deliveryPoint
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30a"])
         if value:
             for single_value in value:
-                secondary_data.append('deliveryPoint;'+single_value)
+                primary_vals[CKAN_secondary_lang]['delivery_point'] = single_value
         # city
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30b"])
         if value:
             for single_value in value:
-                secondary_data.append('city;'+single_value)
+                primary_vals[CKAN_secondary_lang]['city'] = single_value
         # administrativeArea
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30c"])
         if value:
             for single_value in value:
-                secondary_data.append('administrativeArea;'+single_value)
+                primary_vals[CKAN_secondary_lang]['administrative_area'] = single_value
         # postalCode
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30d"])
         if value:
             for single_value in value:
-                secondary_data.append('postalCode;'+single_value)
+                primary_vals[CKAN_secondary_lang]['postal_code'] = single_value
         # country
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30e"])
         if value:
             for single_value in value:
-                secondary_data.append('country;'+single_value)
+                primary_vals[CKAN_secondary_lang]['country'] = single_value
         # electronicMailAddress
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30f"])
         if value:
             for single_value in value:
-                secondary_data.append('electronicMailAddress;'+single_value)
+                primary_vals[CKAN_secondary_lang]['electronic_mail_address'] = single_value
 
-        if len(secondary_data) < 1:
+        if len(primary_vals[CKAN_secondary_lang]) < 1:
             reportError(
                 HNAP_fileIdentifier,[
                     schema_ref["30"]['CKAN API property'],
                     'Value not found in '+schema_ref["30"]['Reference']
                 ])
 
-        json_record[schema_ref["29"]['CKAN API property']][CKAN_secondary_lang] = ','.join(secondary_data)
+        json_record[schema_ref["29"]['CKAN API property']] = json.dumps(primary_vals)
 
 # CC::OpenMaps-31 Contact Email
 
@@ -845,88 +839,89 @@ def main():
 
 # CC::OpenMaps-57 Distributor (English)
 
-        primary_vals = []
-        second_vals = []
+        primary_vals = {}
+        primary_vals[CKAN_primary_lang] = {}
+        primary_vals[CKAN_secondary_lang] = {}
 
         # organizationName
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57a"])
         if value:
             for single_value in value:
-                primary_vals.append('organizationName;'+single_value)
+                primary_vals[CKAN_primary_lang]['organization_name'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58a"])
         if value:
             for single_value in value:
-                second_vals.append('organizationName;'+single_value)
+                primary_vals[CKAN_secondary_lang]['organization_name'] = single_value
 
         # phone
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57b"])
         if value:
             for single_value in value:
-                primary_vals.append('phone;'+single_value)
+                primary_vals[CKAN_primary_lang]['phone'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58b"])
         if value:
             for single_value in value:
-                second_vals.append('phone;'+single_value)
+                primary_vals[CKAN_secondary_lang]['phone'] = single_value
 
         # address
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57c"])
         if value:
             for single_value in value:
-                primary_vals.append('address;'+single_value)
+                primary_vals[CKAN_primary_lang]['address'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58c"])
         if value:
             for single_value in value:
-                second_vals.append('address;'+single_value)
+                primary_vals[CKAN_secondary_lang]['address'] = single_value
 
         # city
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57d"])
         if value:
             for single_value in value:
-                primary_vals.append('city;'+single_value)
+                primary_vals[CKAN_primary_lang]['city'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58d"])
         if value:
             for single_value in value:
-                second_vals.append('city;'+single_value)
+                primary_vals[CKAN_secondary_lang]['city'] = single_value
 
         # administrativeArea
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57e"])
         if value:
             for single_value in value:
-                primary_vals.append('administrativeArea;'+single_value)
+                primary_vals[CKAN_primary_lang]['administrative_area'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58e"])
         if value:
             for single_value in value:
-                second_vals.append('administrativeArea;'+single_value)
+                primary_vals[CKAN_secondary_lang]['administrative_area'] = single_value
 
         # postalCode
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57f"])
         if value:
             for single_value in value:
-                primary_vals.append('postalCode;'+single_value)
+                primary_vals[CKAN_primary_lang]['postal_code'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58f"])
         if value:
             for single_value in value:
-                second_vals.append('postalCode;'+single_value)
+                primary_vals[CKAN_secondary_lang]['postal_code'] = single_value
 
         # country
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57g"])
         if value:
             for single_value in value:
-                primary_vals.append('country;'+single_value)
+                primary_vals[CKAN_primary_lang]['country'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58g"])
         if value:
             for single_value in value:
-                second_vals.append('country;'+single_value)
+                primary_vals[CKAN_secondary_lang]['country'] = single_value
 
         # electronicMailAddress  mandatory
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57h"])
         if value:
             for single_value in value:
-                primary_vals.append('electronicMailAddress;'+single_value)
+                primary_vals[CKAN_primary_lang]['electronic_mail_address'] = single_value
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58h"])
         if value:
             for single_value in value:
-                second_vals.append('electronicMailAddress;'+single_value)
+                primary_vals[CKAN_secondary_lang]['electronic_mail_address'] = single_value
 
         # role mandatory
         value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57i"])
@@ -941,12 +936,14 @@ def main():
                             'Value not found in '+schema_ref["57"]['Reference']
                         ])
                 else:
-                    primary_vals.append('role;'+termsValue[0])
-                    second_vals.append('role;'+termsValue[1])
+                    primary_vals[CKAN_primary_lang]['role'] = termsValue[0]
+                    primary_vals[CKAN_secondary_lang]['role'] = termsValue[1]
 
-        json_record[schema_ref["57"]['CKAN API property']] = {}
-        json_record[schema_ref["57"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_vals)
-        json_record[schema_ref["57"]['CKAN API property']][CKAN_secondary_lang] = ','.join(second_vals)
+        json_record[schema_ref["57"]['CKAN API property']] = json.dumps(primary_vals)
+
+        #json_record[schema_ref["57"]['CKAN API property']] = {}
+        #json_record[schema_ref["57"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_vals)
+        #json_record[schema_ref["57"]['CKAN API property']][CKAN_secondary_lang] = ','.join(second_vals)
 
 # CC::OpenMaps-59 Status
 
@@ -1569,21 +1566,21 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
 #Citation-Role
 #IC_90    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_90
 napCI_RoleCode = {
-    'RI_408'    : [u'resourceProvider',         u'fournisseurRessource'],
-    'RI_409'    : [u'custodian',                u'conservateur'],
-    'RI_410'    : [u'owner',                    u'propriétaire'],
-    'RI_411'    : [u'user',                     u'utilisateur'],
-    'RI_412'    : [u'distributor',              u'distributeur'],
-    'RI_413'    : [u'originator',               u'créateur'],
-    'RI_414'    : [u'pointOfContact',           u'contact'],
-    'RI_415'    : [u'principalInvestigator',    u'chercheurPrincipal'],
-    'RI_416'    : [u'processor',                u'traiteur'],
-    'RI_417'    : [u'publisher',                u'éditeur'],
-    'RI_418'    : [u'author',                   u'auteur'],
-    'RI_419'    : [u'collaborator',             u'collaborateur'],
-    'RI_420'    : [u'editor',                   u'réviseur'],
-    'RI_421'    : [u'mediator',                 u'médiateur'],
-    'RI_422'    : [u'rightsHolder',             u'détenteurDroits']
+    'RI_408'    : [u'resource_provider',        u'resourceProvider',         u'fournisseurRessource'],
+    'RI_409'    : [u'custodian',                u'custodian',                u'conservateur'],
+    'RI_410'    : [u'owner',                    u'owner',                    u'propriétaire'],
+    'RI_411'    : [u'user',                     u'user',                     u'utilisateur'],
+    'RI_412'    : [u'distributor',              u'distributor',              u'distributeur'],
+    'RI_413'    : [u'originator',               u'originator',                u'créateur'],
+    'RI_414'    : [u'point_of_contact',         u'pointOfContact',           u'contact'],
+    'RI_415'    : [u'principal_investigator',   u'principalInvestigator',    u'chercheurPrincipal'],
+    'RI_416'    : [u'processor',                u'processor',                u'traiteur'],
+    'RI_417'    : [u'publisher',                u'publisher',                u'éditeur'],
+    'RI_418'    : [u'author',                   u'author',                   u'auteur'],
+    'RI_419'    : [u'collaborator',             u'collaborator',             u'collaborateur'],
+    'RI_420'    : [u'editor',                   u'editor',                   u'réviseur'],
+    'RI_421'    : [u'mediator',                 u'mediator',                 u'médiateur'],
+    'RI_422'    : [u'rights_holder',            u'rightsHolder',             u'détenteurDroits']
 }
 
 #Status
