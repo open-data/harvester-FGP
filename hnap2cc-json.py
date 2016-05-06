@@ -800,7 +800,7 @@ def main():
             reportError(
                 HNAP_fileIdentifier,[
                     schema_ref["37"]['CKAN API property'],
-                    'madatory field missing'
+                    'mandatory field missing'
                 ])
 
 # CC::OpenMaps-48 Date Released
@@ -1239,17 +1239,17 @@ def main():
                 reportError(
                     HNAP_fileIdentifier,[
                         schema_ref["69-70-73"]['CKAN API property'],
-                        'format,madatory field missing'
+                        'format,mandatory field missing'
                     ])
                 reportError(
                     HNAP_fileIdentifier,[
                         schema_ref["69-70-73"]['CKAN API property'],
-                        'language,madatory field missing'
+                        'language,mandatory field missing'
                     ])
                 reportError(
                     HNAP_fileIdentifier,[
                         schema_ref["69-70-73"]['CKAN API property'],
-                        'contentType,madatory field missing'
+                        'contentType,mandatory field missing'
                     ])
 
             if json_record_resource[schema_ref["69"]['CKAN API property']].lower() not in ResourceType:
@@ -1385,7 +1385,7 @@ def reportError(HNAP_fileIdentifier,errorInfo):
 def sanityMandatory(HNAP_fileIdentifier,errorInfo, values):
     values = list(set(values))
     if values is None or len(values) < 1:
-        errorInfo.append('madatory field missing or not found in controlled list')
+        errorInfo.append('mandatory field missing or not found in controlled list')
         reportError(HNAP_fileIdentifier,errorInfo)
         return False
     return True
