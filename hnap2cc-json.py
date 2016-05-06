@@ -172,7 +172,7 @@ def main():
         json_record[schema_ref["06"]['CKAN API property']] = {}
         json_record[
             schema_ref["06"]['CKAN API property']
-        ][CKAN_primary_lang] = ','.join(primary_vals)
+        ][CKAN_primary_lang] = " \n".join(primary_vals)
 
 # CC::OpenMaps-07 Metadata Contact (French)
         second_vals = []
@@ -195,7 +195,7 @@ def main():
 
         json_record[
             schema_ref["06"]['CKAN API property']
-        ][CKAN_secondary_lang] = ','.join(second_vals)
+        ][CKAN_secondary_lang] = " \n".join(second_vals)
 
 # CC::OpenMaps-08 Source Metadata Record Date Stamp
         tmp = fetchXMLValues(record, schema_ref["08a"]['FGP XPATH'])
