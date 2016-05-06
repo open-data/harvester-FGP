@@ -319,6 +319,9 @@ def main():
                     if termsValue:
                         valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
                         break
+            
+            # Unique the departments, don't need duplicates
+            valid_orgs = list(set(valid_orgs))
 
             if len(valid_orgs) < 1:
                 reportError(
