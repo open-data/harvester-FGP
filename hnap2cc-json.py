@@ -310,6 +310,10 @@ def main():
                 GOC_Structure = org_string.strip().split(';')
                 del GOC_Structure[0]
 
+                # Append to contributor
+                contributor_english = []
+                contributor_french = []
+
                 # At ths point you have ditched GOC and your checking for good
                 # dept names
                 for GOC_Div in GOC_Structure:
@@ -317,9 +321,11 @@ def main():
                     termsValue = fetchCLValue(
                         GOC_Div, GC_Registry_of_Applied_Terms)
                     if termsValue:
+                        contributor_english.append(termsValue[0])
+                        contributor_french.append(termsValue[2])
                         valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
                         break
-            
+
             # Unique the departments, don't need duplicates
             valid_orgs = list(set(valid_orgs))
 
@@ -330,7 +336,23 @@ def main():
                         'No valid orgs found '+org_string.strip()
                     ])
             else:
-                json_record[schema_ref["16"]['CKAN API property']] = ','.join(valid_orgs)
+                json_record[schema_ref["16"]['CKAN API property']] = valid_orgs[0]
+
+            # Unique the departments, don't need duplicates
+            contributor_english = list(set(contributor_english))
+            contributor_french = list(set(contributor_french))
+
+            # Multiple owners, excess pushed to contrib
+            if len(valid_orgs) > 1:
+                del valid_orgs[0]
+                del contributor_english[0]
+                del contributor_french[0]
+                json_record[schema_ref["22"]['CKAN API property']] = {}
+                json_record[schema_ref["22"]['CKAN API property']]['en'] = []
+                json_record[schema_ref["22"]['CKAN API property']]['fr'] = []
+                for org in valid_orgs:
+                    json_record[schema_ref["22"]['CKAN API property']]['en'] = ','.join(contributor_english)
+                    json_record[schema_ref["22"]['CKAN API property']]['fr'] = ','.join(contributor_french)
 
 # CC::OpenMaps-17 Publisher - Organization Name at Publication (English)
 #       CKAN defined/provided
