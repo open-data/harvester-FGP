@@ -1589,14 +1589,14 @@ napCI_RoleCode = {
 #Status
 #IC_106    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_106
 napMD_ProgressCode = {
-    'RI_593'    : [u'completed',                u'complété'],
-    'RI_594'    : [u'historicalArchive',        u'archiveHistorique'],
-    'RI_595'    : [u'obsolete',                 u'périmé'],
-    'RI_596'    : [u'onGoing',                  u'enContinue'],
-    'RI_597'    : [u'planned',                  u'planifié'],
-    'RI_598'    : [u'required',                 u'requis'],
-    'RI_599'    : [u'underDevelopment',         u'enProduction'],
-    'RI_600'    : [u'proposed',                 u'proposé']
+    'RI_593'    : [u'completed',                u'completed',                u'complété'],
+    'RI_594'    : [u'historical_archive',       u'historicalArchive',        u'archiveHistorique'],
+    'RI_595'    : [u'obsolete',                 u'obsolete',                 u'périmé'],
+    'RI_596'    : [u'on_going',                 u'onGoing',                  u'enContinue'],
+    'RI_597'    : [u'planned',                  u'planned',                  u'planifié'],
+    'RI_598'    : [u'required',                 u'required',                 u'requis'],
+    'RI_599'    : [u'under_development',        u'underDevelopment',         u'enProduction'],
+    'RI_600'    : [u'proposed',                 u'proposed',                 u'proposé']
 }
 
 #Association Type
