@@ -323,7 +323,10 @@ def main():
                     if termsValue:
                         contributor_english.append(termsValue[0])
                         contributor_french.append(termsValue[2])
-                        valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
+                        if termsValue[1] == termsValue[3]:
+                            valid_orgs.append(termsValue[1].lower())
+                        else:
+                            valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
                         break
 
             # Unique the departments, don't need duplicates
