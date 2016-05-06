@@ -1610,11 +1610,11 @@ napDS_AssociationTypeCode = {
 #spatialRespresentionType
 #IC_109    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_109
 napMD_SpatialRepresentationTypeCode = {
-    'RI_635'    : [u'vector',                   u'vecteur'],
-    'RI_636'    : [u'grid',                     u'grille'],
-    'RI_637'    : [u'textTable',                u'texteTable'],
-    'RI_638'    : [u'tin',                      u'tin'],
-    'RI_639'    : [u'stereoModel',              u'stéréomodèle'],
+    'RI_635'    : [u'vector',                   u'vector',                   u'vecteur'],
+    'RI_636'    : [u'grid',                     u'grid',                     u'grille'],
+    'RI_637'    : [u'text_table',               u'textTable',                u'texteTable'],
+    'RI_638'    : [u'tin',                      u'tin',                      u'tin'],
+    'RI_639'    : [u'stereo_model',             u'stereoModel',              u'stéréomodèle'],
     'RI_640'    : [u'video',                    u'vidéo']
 }
 
