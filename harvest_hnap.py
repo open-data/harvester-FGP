@@ -109,6 +109,12 @@ csw.getrecords2(format='xml', xml="""<?xml version="1.0"?>
             <Filter
                 xmlns="http://www.opengis.net/ogc"
                 xmlns:gml="http://www.opengis.net/gml"/>
+
+                <PropertyIsGreaterThanOrEqualTo>
+                    <PropertyName>Modified</PropertyName>
+                    <Literal>2016-04-04</Literal>
+                </PropertyIsGreaterThanOrEqualTo>
+
         </csw:Constraint>
     </csw:Query>
 </csw:GetRecords>
