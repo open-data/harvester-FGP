@@ -107,25 +107,24 @@ request_template = """<?xml version="1.0"?>
             version="1.1.0">
             <Filter
                 xmlns="http://www.opengis.net/ogc"
-                xmlns:gml="http://www.opengis.net/gml"/>
-
+                xmlns:gml="http://www.opengis.net/gml">
                 <PropertyIsGreaterThanOrEqualTo>
                     <PropertyName>Modified</PropertyName>
-                    <Literal>2016-04-04</Literal>
+                    <Literal>2015-05-04</Literal>
                 </PropertyIsGreaterThanOrEqualTo>
-
+            </Filter>
         </csw:Constraint>
     </csw:Query>
 </csw:GetRecords>
 """
 
 def main():
-    print "Start Process"
+    #print "Start Process"
     active_page = 0
+    next_record = 1
     request_another = True
-    last_search = ''
     while request_another:
-        print "Fetch Next"
+        #print "Fetch Next"
         request_another = False
 
         # Filter records into latest updates
@@ -141,8 +140,9 @@ def main():
         # This filter was supplied by EC, the CSW service technical lead
         current_request = request_template % (
             records_per_request,
-            (active_page*records_per_request)+1
+            next_record
         )
+        #(active_page*records_per_request)+1
         csw.getrecords2(format='xml', xml=current_request)
         active_page += 1
 
@@ -164,37 +164,26 @@ def main():
             records[0],
             "csw:SearchStatus",
             "timestamp")[0]
-        number_of_records_matched = fetchXMLAttribute(
+        number_of_records_matched = int(fetchXMLAttribute(
             records[0],
             "csw:SearchResults",
             "numberOfRecordsMatched")[0]
-        number_of_records_returned = fetchXMLAttribute(
+        )
+        number_of_records_returned = int(fetchXMLAttribute(
             records[0],
             "csw:SearchResults",
             "numberOfRecordsReturned")[0]
-        next_record = fetchXMLAttribute(
+        )
+        next_record = int(fetchXMLAttribute(
             records[0],
             "csw:SearchResults",
             "nextRecord")[0]
+        )
 
-        print current_request
-
-        # Single report out, multiple records combined
-        if timestamp:
-            print "Time:"+timestamp
-        if number_of_records_matched:
-            print "Matched:"+number_of_records_matched
-        if number_of_records_returned:
-            print "Returned:"+number_of_records_returned
-        if next_record:
-            print "Next:"+next_record
-
-            if active_page < 8:
-                request_another = True
-
-        print ""
-        print ""
-        print ""
+        if next_record > number_of_records_matched:
+            pass
+        else:
+            request_another = True
 
         # When we move to Tom K's filter we can use results in an R2 unified
         # harvester
@@ -209,7 +198,8 @@ def main():
         # elem = etree.XML(csw.response, parser=parser)
         # print etree.tostring(elem)
 
-        #print csw.response
+        # Output the harvested page
+        print csw.response
 
 ##################################################
 # XML Extract functions
