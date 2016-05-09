@@ -614,7 +614,7 @@ def main():
 
             json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang] = []
 
-            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["34"])
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["35"])
             if value:
                 for single_value in value:
                     p = re.compile('^[A-Z][A-Z] [^>]+ > ')
