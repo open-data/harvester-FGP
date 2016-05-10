@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Usage: harvest.py [-f from_iso_date_time]
+
+Extract HNAP XML from FGP platform
+
+Options:
+    -f ISO datetime object that defines when to start harvesting
+"""
 
 # CSW metadata extraction
 # Output of this script is parsed by another into OGDMES-CKAN JSON.
@@ -28,6 +35,7 @@ import os.path
 import sys
 import re
 from lxml import etree
+import docopt
 
 # Connection variables
 csw_url = 'csw.open.canada.ca/geonetwork/srv/csw'
@@ -110,7 +118,7 @@ request_template = """<?xml version="1.0"?>
                 xmlns:gml="http://www.opengis.net/gml">
                 <PropertyIsGreaterThanOrEqualTo>
                     <PropertyName>Modified</PropertyName>
-                    <Literal>2015-05-04</Literal>
+                    <Literal>%s</Literal>
                 </PropertyIsGreaterThanOrEqualTo>
             </Filter>
         </csw:Constraint>
@@ -120,6 +128,10 @@ request_template = """<?xml version="1.0"?>
 
 def main():
     #print "Start Process"
+    # Is there a specified start date
+    if arguments['-f']:
+        start_date = arguments['-f']
+
     active_page = 0
     next_record = 1
     request_another = True
@@ -230,6 +242,8 @@ def fetchXMLAttribute(objectToXpath, xpath, attribute):
         'csw': 'http://www.opengis.net/cat/csw/2.0.2'})
 
 if __name__ == "__main__":
+    #options, arguments = docopt(__doc__)  # parse arguments based on docstring above
+    arguments = docopt.docopt(__doc__)
     sys.exit(main())
 
 # #### END
