@@ -49,6 +49,31 @@ Either stream HNAP in or supply a file
     sys.exit()
 
 ##################################################
+# Input can be multiple XML blocks
+# Ensure to never try to be clever only taking the
+# last XML record or reduce or sort or try to
+# combine them.  Each of these updates need to
+# happen in the order they were supplied to ensure
+# the order of changes.
+# We can also not reprocess parts without all the
+# subsequent records.  You can't re-process data
+# from a particular span of time, any historical
+# re-procssing must continue to the current day.
+input_data_blocks = []
+active_input_block = ''
+for line in input_file:
+    if not line.strip():
+        continue
+    if active_input_block == '':
+        active_input_block += line
+    elif re.search('^<\?xml', line):
+        input_data_blocks.append(active_input_block)
+        active_input_block = line
+    else:
+        active_input_block += line
+input_data_blocks.append(active_input_block)
+
+##################################################
 # Extract the schema to convert to
 schema_file = 'config/Schema--GC.OGS.TBS-CommonCore-OpenMaps.csv'
 schema_ref = {}
@@ -85,14 +110,16 @@ iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
 
 
 def main():
-    # Read the file, should be a streamed input in the future
-    root = etree.parse(input_file)
-    # Parse the root and itterate over each record
-    records = fetchXMLArray(root, records_root)
-
     json_records = []
-    for record in records:
-        json_record = {}
+    for input_block in input_data_blocks:
+
+        # Read the file, should be a streamed input in the future
+        root = etree.XML(input_block)
+        # Parse the root and itterate over each record
+        records = fetchXMLArray(root, records_root)
+
+        for record in records:
+            json_record = {}
 
 ##################################################
 # HNAP CORE LANGUAGE
@@ -100,50 +127,50 @@ def main():
 # Language is required, the rest can't be processed
 # for errors if the primary language is not certain
 
-        tmp = fetchXMLValues(record, schema_ref["12"]['FGP XPATH'])
-        if sanitySingle('NOID', ['HNAP Priamry Language'], tmp) is False:
-            HNAP_primary_language = False
-        else:
-            HNAP_primary_language = sanityFirst(tmp).split(';')[0].strip()
-            if HNAP_primary_language == 'eng':
-                CKAN_primary_lang = 'en'
-                CKAN_secondary_lang = 'fr'
-                HNAP_primary_lang = 'English'
-                HNAP_secondary_lang = 'French'
+            tmp = fetchXMLValues(record, schema_ref["12"]['FGP XPATH'])
+            if sanitySingle('NOID', ['HNAP Priamry Language'], tmp) is False:
+                HNAP_primary_language = False
             else:
-                CKAN_primary_lang = 'fr'
-                CKAN_secondary_lang = 'en'
-                HNAP_primary_lang = 'French'
-                HNAP_secondary_lang = 'English'
+                HNAP_primary_language = sanityFirst(tmp).split(';')[0].strip()
+                if HNAP_primary_language == 'eng':
+                    CKAN_primary_lang = 'en'
+                    CKAN_secondary_lang = 'fr'
+                    HNAP_primary_lang = 'English'
+                    HNAP_secondary_lang = 'French'
+                else:
+                    CKAN_primary_lang = 'fr'
+                    CKAN_secondary_lang = 'en'
+                    HNAP_primary_lang = 'French'
+                    HNAP_secondary_lang = 'English'
 
 ##################################################
 # Catalogue Metadata
 ##################################################
 
 # CC::OpenMaps-01 Catalogue Type
-        json_record[schema_ref["01"]['CKAN API property']] = 'dataset'
+            json_record[schema_ref["01"]['CKAN API property']] = 'dataset'
 # CC::OpenMaps-02 Collection Type
-        json_record[schema_ref["02"]['CKAN API property']] = 'fgp'
+            json_record[schema_ref["02"]['CKAN API property']] = 'fgp'
 # CC::OpenMaps-03 Metadata Scheme
 #       CKAN defined/provided
 # CC::OpenMaps-04 Metadata Scheme Version
 #       CKAN defined/provided
 # CC::OpenMaps-05 Metadata Record Identifier
-        tmp = fetchXMLValues(record, schema_ref["05"]['FGP XPATH'])
-        if sanitySingle('NOID', ['fileIdentifier'], tmp) is False:
-            HNAP_fileIdentifier = False
-        else:
-            json_record[schema_ref["05"]['CKAN API property']] =\
-                HNAP_fileIdentifier =\
-                sanityFirst(tmp)
+            tmp = fetchXMLValues(record, schema_ref["05"]['FGP XPATH'])
+            if sanitySingle('NOID', ['fileIdentifier'], tmp) is False:
+                HNAP_fileIdentifier = False
+            else:
+                json_record[schema_ref["05"]['CKAN API property']] =\
+                    HNAP_fileIdentifier =\
+                    sanityFirst(tmp)
 
 ##################################################
 # Point of no return
 # fail out if you don't have either a primary language or ID
 ##################################################
 
-        if HNAP_primary_language is False or HNAP_fileIdentifier is False:
-            break
+            if HNAP_primary_language is False or HNAP_fileIdentifier is False:
+                break
 
 # From here on in continue if you can and collect as many errors as
 # possible for FGP Help desk.  We awant to have a full report of issues
@@ -152,210 +179,210 @@ def main():
 # opposed to doing them piecemeal.
 
 # CC::OpenMaps-06 Metadata Contact (English)
-        primary_vals = []
-        # organizationName
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["06a"])
-        if value:
-            for single_value in value:
-                primary_vals.append(single_value)
-        # voice
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["06b"])
-        if value:
-            for single_value in value:
-                primary_vals.append(single_value)
-        # electronicMailAddress
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["06c"])
-        if value:
-            for single_value in value:
-                primary_vals.append(single_value)
+            primary_vals = []
+            # organizationName
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["06a"])
+            if value:
+                for single_value in value:
+                    primary_vals.append(single_value)
+            # voice
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["06b"])
+            if value:
+                for single_value in value:
+                    primary_vals.append(single_value)
+            # electronicMailAddress
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["06c"])
+            if value:
+                for single_value in value:
+                    primary_vals.append(single_value)
 
-        json_record[schema_ref["06"]['CKAN API property']] = {}
-        json_record[
-            schema_ref["06"]['CKAN API property']
-        ][CKAN_primary_lang] = ','.join(primary_vals)
+            json_record[schema_ref["06"]['CKAN API property']] = {}
+            json_record[
+                schema_ref["06"]['CKAN API property']
+            ][CKAN_primary_lang] = ','.join(primary_vals)
 
 # CC::OpenMaps-07 Metadata Contact (French)
-        second_vals = []
+            second_vals = []
 
-        # organizationName
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["07a"])
-        if value:
-            for single_value in value:
-                second_vals.append(single_value)
-        # voice
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["07b"])
-        if value:
-            for single_value in value:
-                primary_vals.append(single_value)
-        # electronicMailAddress
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["07c"])
-        if value:
-            for single_value in value:
-                second_vals.append(single_value)
+            # organizationName
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["07a"])
+            if value:
+                for single_value in value:
+                    second_vals.append(single_value)
+            # voice
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["07b"])
+            if value:
+                for single_value in value:
+                    primary_vals.append(single_value)
+            # electronicMailAddress
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["07c"])
+            if value:
+                for single_value in value:
+                    second_vals.append(single_value)
 
-        json_record[
-            schema_ref["06"]['CKAN API property']
-        ][CKAN_secondary_lang] = ','.join(second_vals)
+            json_record[
+                schema_ref["06"]['CKAN API property']
+            ][CKAN_secondary_lang] = ','.join(second_vals)
 
 # CC::OpenMaps-08 Source Metadata Record Date Stamp
-        tmp = fetchXMLValues(record, schema_ref["08a"]['FGP XPATH'])
-        values = list(set(tmp))
-        if len(values) < 1:
-            tmp = fetchXMLValues(record, schema_ref["08b"]['FGP XPATH'])
+            tmp = fetchXMLValues(record, schema_ref["08a"]['FGP XPATH'])
+            values = list(set(tmp))
+            if len(values) < 1:
+                tmp = fetchXMLValues(record, schema_ref["08b"]['FGP XPATH'])
 
-        if sanityMandatory(
-            HNAP_fileIdentifier,
-            [schema_ref["08"]['CKAN API property']],
-            tmp
-        ):
-            if sanitySingle(
+            if sanityMandatory(
                 HNAP_fileIdentifier,
                 [schema_ref["08"]['CKAN API property']],
                 tmp
             ):
-                # Might be a iso datetime
-                date_str = sanityFirst(tmp)
-                if date_str.count('T') == 1:
-                    date_str = date_str.split('T')[0]
+                if sanitySingle(
+                    HNAP_fileIdentifier,
+                    [schema_ref["08"]['CKAN API property']],
+                    tmp
+                ):
+                    # Might be a iso datetime
+                    date_str = sanityFirst(tmp)
+                    if date_str.count('T') == 1:
+                        date_str = date_str.split('T')[0]
 
-                if sanityDate(
-                        HNAP_fileIdentifier,
-                        [schema_ref["08"]['CKAN API property']],
-                        date_str):
-                    json_record[schema_ref["08"]['CKAN API property']] =\
-                        date_str
+                    if sanityDate(
+                            HNAP_fileIdentifier,
+                            [schema_ref["08"]['CKAN API property']],
+                            date_str):
+                        json_record[schema_ref["08"]['CKAN API property']] =\
+                            date_str
 
 # CC::OpenMaps-09 Metadata Contact (French)
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["09"])
-        if value:
-            json_record[schema_ref["09"]['CKAN API property']] = value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["09"])
+            if value:
+                json_record[schema_ref["09"]['CKAN API property']] = value
 
 # CC::OpenMaps-10 Parent identifier
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["10"])
-        if value:
-            json_record[schema_ref["10"]['CKAN API property']] = value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["10"])
+            if value:
+                json_record[schema_ref["10"]['CKAN API property']] = value
 
 # CC::OpenMaps-11 Hierarchy level
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["11"])
-        if value:
-            json_record[schema_ref["11"]['CKAN API property']] = value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["11"])
+            if value:
+                json_record[schema_ref["11"]['CKAN API property']] = value
 
 # CC::OpenMaps-12 File Identifier
 
-        json_record[schema_ref["12"]['CKAN API property']] =\
-            HNAP_fileIdentifier
+            json_record[schema_ref["12"]['CKAN API property']] =\
+                HNAP_fileIdentifier
 
 # CC::OpenMaps-13 Short Key
 
-        # Disabled as per the current install of RAMP
-        # json_record[schema_ref["13"]
-        # ['CKAN API property']] = HNAP_fileIdentifier[0:8]
+            # Disabled as per the current install of RAMP
+            # json_record[schema_ref["13"]
+            # ['CKAN API property']] = HNAP_fileIdentifier[0:8]
 
 # CC::OpenMaps-14 Title (English)
-        json_record[schema_ref["14"]['CKAN API property']] = {}
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["14"])
-        if value:
-            json_record[
-                schema_ref["14"]['CKAN API property']
-            ][CKAN_primary_lang] = value
+            json_record[schema_ref["14"]['CKAN API property']] = {}
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["14"])
+            if value:
+                json_record[
+                    schema_ref["14"]['CKAN API property']
+                ][CKAN_primary_lang] = value
 # CC::OpenMaps-15 Title (French)
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["15"])
-        if value:
-            json_record[
-                schema_ref["14"]['CKAN API property']
-            ][CKAN_secondary_lang] = value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["15"])
+            if value:
+                json_record[
+                    schema_ref["14"]['CKAN API property']
+                ][CKAN_secondary_lang] = value
 
 # CC::OpenMaps-16 Publisher - Current Organization Name
 
-        org_strings = []
-        org_string = ''
-        attempt = ''
-        value = fetch_FGP_value(
-            record, HNAP_fileIdentifier, schema_ref["16a"])
-        if not value or len(value) < 1:
-            attempt += "No english value"
-        else:
-            attempt += "Is english value ["+str(len(value))+"]"
-            for single_value in value:
-                if re.search("^Government of Canada;", single_value):
-                    org_strings.append(single_value)
-                else:
-                    attempt += " but no GoC prefix ["+single_value+"]"
+            org_strings = []
+            org_string = ''
+            attempt = ''
+            value = fetch_FGP_value(
+                record, HNAP_fileIdentifier, schema_ref["16a"])
+            if not value or len(value) < 1:
+                attempt += "No english value"
+            else:
+                attempt += "Is english value ["+str(len(value))+"]"
+                for single_value in value:
+                    if re.search("^Government of Canada;", single_value):
+                        org_strings.append(single_value)
+                    else:
+                        attempt += " but no GoC prefix ["+single_value+"]"
 
-        value = fetch_FGP_value(
-            record, HNAP_fileIdentifier, schema_ref["16b"])
-        if not value or len(value) < 1:
-            attempt += ", no french value"
-        else:
-            attempt += ", french ["+str(len(value))+"]"
-            for single_value in value:
-                if re.search("^Government du Canada;", single_value):
-                    org_strings.append(single_value)
-                else:
-                    attempt += " but no GdC ["+single_value+"]"
+            value = fetch_FGP_value(
+                record, HNAP_fileIdentifier, schema_ref["16b"])
+            if not value or len(value) < 1:
+                attempt += ", no french value"
+            else:
+                attempt += ", french ["+str(len(value))+"]"
+                for single_value in value:
+                    if re.search("^Government du Canada;", single_value):
+                        org_strings.append(single_value)
+                    else:
+                        attempt += " but no GdC ["+single_value+"]"
 
-        if len(org_strings) < 1:
-            reportError(
-                HNAP_fileIdentifier,[
-                    schema_ref["16"]['CKAN API property'],
-                    "Bad organizationName, no Government of Canada",
-                    attempt
-                ])
-        else:
-            valid_orgs = []
-            for org_string in org_strings:
-                GOC_Structure = org_string.strip().split(';')
-                del GOC_Structure[0]
-
-                # Append to contributor
-                contributor_english = []
-                contributor_french = []
-
-                # At ths point you have ditched GOC and your checking for good
-                # dept names
-                for GOC_Div in GOC_Structure:
-                    # Are they in the CL?
-                    termsValue = fetchCLValue(
-                        GOC_Div, GC_Registry_of_Applied_Terms)
-                    if termsValue:
-                        contributor_english.append(termsValue[0])
-                        contributor_french.append(termsValue[2])
-                        if termsValue[1] == termsValue[3]:
-                            valid_orgs.append(termsValue[1].lower())
-                        else:
-                            valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
-                        break
-
-            # Unique the departments, don't need duplicates
-            valid_orgs = list(set(valid_orgs))
-
-            if len(valid_orgs) < 1:
+            if len(org_strings) < 1:
                 reportError(
                     HNAP_fileIdentifier,[
                         schema_ref["16"]['CKAN API property'],
-                        'No valid orgs found '+org_string.strip()
+                        "Bad organizationName, no Government of Canada",
+                        attempt
                     ])
             else:
-                json_record[schema_ref["16"]['CKAN API property']] = valid_orgs[0]
+                valid_orgs = []
+                for org_string in org_strings:
+                    GOC_Structure = org_string.strip().split(';')
+                    del GOC_Structure[0]
 
-            # Unique the departments, don't need duplicates
-            contributor_english = list(set(contributor_english))
-            contributor_french = list(set(contributor_french))
+                    # Append to contributor
+                    contributor_english = []
+                    contributor_french = []
 
-            # Multiple owners, excess pushed to contrib
-            if len(valid_orgs) > 1:
-                del valid_orgs[0]
-                del contributor_english[0]
-                del contributor_french[0]
-                json_record[schema_ref["22"]['CKAN API property']] = {}
-                json_record[schema_ref["22"]['CKAN API property']]['en'] = []
-                json_record[schema_ref["22"]['CKAN API property']]['fr'] = []
-                for org in valid_orgs:
-                    json_record[schema_ref["22"]['CKAN API property']]['en'] = ','.join(contributor_english)
-                    json_record[schema_ref["22"]['CKAN API property']]['fr'] = ','.join(contributor_french)
+                    # At ths point you have ditched GOC and your checking for good
+                    # dept names
+                    for GOC_Div in GOC_Structure:
+                        # Are they in the CL?
+                        termsValue = fetchCLValue(
+                            GOC_Div, GC_Registry_of_Applied_Terms)
+                        if termsValue:
+                            contributor_english.append(termsValue[0])
+                            contributor_french.append(termsValue[2])
+                            if termsValue[1] == termsValue[3]:
+                                valid_orgs.append(termsValue[1].lower())
+                            else:
+                                valid_orgs.append((termsValue[1]+"-"+termsValue[3]).lower())
+                            break
+
+                # Unique the departments, don't need duplicates
+                valid_orgs = list(set(valid_orgs))
+
+                if len(valid_orgs) < 1:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["16"]['CKAN API property'],
+                            'No valid orgs found '+org_string.strip()
+                        ])
+                else:
+                    json_record[schema_ref["16"]['CKAN API property']] = valid_orgs[0]
+
+                # Unique the departments, don't need duplicates
+                contributor_english = list(set(contributor_english))
+                contributor_french = list(set(contributor_french))
+
+                # Multiple owners, excess pushed to contrib
+                if len(valid_orgs) > 1:
+                    del valid_orgs[0]
+                    del contributor_english[0]
+                    del contributor_french[0]
+                    json_record[schema_ref["22"]['CKAN API property']] = {}
+                    json_record[schema_ref["22"]['CKAN API property']]['en'] = []
+                    json_record[schema_ref["22"]['CKAN API property']]['fr'] = []
+                    for org in valid_orgs:
+                        json_record[schema_ref["22"]['CKAN API property']]['en'] = ','.join(contributor_english)
+                        json_record[schema_ref["22"]['CKAN API property']]['fr'] = ','.join(contributor_french)
 
 # CC::OpenMaps-17 Publisher - Organization Name at Publication (English)
 #       CKAN defined/provided
@@ -368,9 +395,9 @@ def main():
 
 # CC::OpenMaps-21 Creator
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["21"])
-        if value:
-            json_record[schema_ref["21"]['CKAN API property']] = value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["21"])
+            if value:
+                json_record[schema_ref["21"]['CKAN API property']] = value
 
 # CC::OpenMaps-22 Contributor (English)
 #       Intentionally left blank, assuming singular contribution
@@ -380,52 +407,52 @@ def main():
 # CC::OpenMaps-24 Position Name (English)
 # CC::OpenMaps-25 Position Name (French)
 
-        json_record[schema_ref["24"]['CKAN API property']] = {}
+            json_record[schema_ref["24"]['CKAN API property']] = {}
 
-        schema_ref["24"]['Occurrences'] = 'R'
-        primary_data = []
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["24"])
-        if value:
-            for single_value in value:
-                primary_data.append(value)
+            schema_ref["24"]['Occurrences'] = 'R'
+            primary_data = []
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["24"])
+            if value:
+                for single_value in value:
+                    primary_data.append(value)
 
-        if len(primary_data) > 0:
-            json_record[schema_ref["24"]['CKAN API property']][CKAN_primary_lang] = ','.join(value)
+            if len(primary_data) > 0:
+                json_record[schema_ref["24"]['CKAN API property']][CKAN_primary_lang] = ','.join(value)
 
-        schema_ref["25"]['Occurrences'] = 'R'
-        primary_data = []
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["25"])
-        if value:
-            for single_value in value:
-                primary_data.append(value)
+            schema_ref["25"]['Occurrences'] = 'R'
+            primary_data = []
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["25"])
+            if value:
+                for single_value in value:
+                    primary_data.append(value)
 
-        if len(primary_data) > 0:
-            json_record[schema_ref["24"]['CKAN API property']][CKAN_secondary_lang] = ','.join(value)
+            if len(primary_data) > 0:
+                json_record[schema_ref["24"]['CKAN API property']][CKAN_secondary_lang] = ','.join(value)
 
-        if len(json_record[schema_ref["24"]['CKAN API property']]) < 1:
-            del json_record[schema_ref["24"]['CKAN API property']]
+            if len(json_record[schema_ref["24"]['CKAN API property']]) < 1:
+                del json_record[schema_ref["24"]['CKAN API property']]
 
 # CC::OpenMaps-26 Role
 
-        # Single report out, multiple records combined
-        schema_ref["26"]['Occurrences'] = 'R'
-        primary_data = []
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["26"])
-        if value:
-            for single_value in value:
-                # Can you find the CL entry?
-                termsValue = fetchCLValue(single_value, napCI_RoleCode)
-                if not termsValue:
-                    reportError(
-                        HNAP_fileIdentifier,[
-                            schema_ref["26"]['CKAN API property'],
-                            'Value not found in '+schema_ref["26"]['Reference']
-                        ])
-                else:
-                    primary_data.append(termsValue[0])
+            # Single report out, multiple records combined
+            schema_ref["26"]['Occurrences'] = 'R'
+            primary_data = []
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["26"])
+            if value:
+                for single_value in value:
+                    # Can you find the CL entry?
+                    termsValue = fetchCLValue(single_value, napCI_RoleCode)
+                    if not termsValue:
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["26"]['CKAN API property'],
+                                'Value not found in '+schema_ref["26"]['Reference']
+                            ])
+                    else:
+                        primary_data.append(termsValue[0])
 
-        if len(primary_data) > 0:
-            json_record[schema_ref["26"]['CKAN API property']] = ','.join(value)
+            if len(primary_data) > 0:
+                json_record[schema_ref["26"]['CKAN API property']] = ','.join(value)
 
 # CC::OpenMaps-27
 #       Undefined property number
@@ -434,224 +461,221 @@ def main():
 
 # CC::OpenMaps-29 Contact Information (English)
 
-        primary_vals = {}
-        primary_vals[CKAN_primary_lang] = {}
+            primary_vals = {}
+            primary_vals[CKAN_primary_lang] = {}
 
-        # deliveryPoint
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29a"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['delivery_point'] = single_value
-        # city
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29b"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['city'] = single_value
-        # administrativeArea
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29c"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['administrative_area'] = single_value
-        # postalCode
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29d"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['postal_code'] = single_value
-        # country
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29e"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['country'] = single_value
-        # electronicMailAddress
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29f"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['electronic_mail_address'] = single_value
+            # deliveryPoint
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29a"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['delivery_point'] = single_value
+            # city
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29b"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['city'] = single_value
+            # administrativeArea
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29c"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['administrative_area'] = single_value
+            # postalCode
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29d"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['postal_code'] = single_value
+            # country
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29e"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['country'] = single_value
+            # electronicMailAddress
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["29f"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['electronic_mail_address'] = single_value
 
-        if len(primary_vals[CKAN_primary_lang]) < 1:
-            reportError(
-                HNAP_fileIdentifier,[
-                    schema_ref["29"]['CKAN API property'],
-                    'Value not found in '+schema_ref["29"]['Reference']
-                ])
+            if len(primary_vals[CKAN_primary_lang]) < 1:
+                reportError(
+                    HNAP_fileIdentifier,[
+                        schema_ref["29"]['CKAN API property'],
+                        'Value not found in '+schema_ref["29"]['Reference']
+                    ])
 
 # CC::OpenMaps-30 Contact Information (French)
 
-        primary_vals[CKAN_secondary_lang] = {}
+            primary_vals[CKAN_secondary_lang] = {}
 
-        # deliveryPoint
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30a"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['delivery_point'] = single_value
-        # city
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30b"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['city'] = single_value
-        # administrativeArea
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30c"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['administrative_area'] = single_value
-        # postalCode
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30d"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['postal_code'] = single_value
-        # country
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30e"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['country'] = single_value
-        # electronicMailAddress
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30f"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['electronic_mail_address'] = single_value
+            # deliveryPoint
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30a"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['delivery_point'] = single_value
+            # city
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30b"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['city'] = single_value
+            # administrativeArea
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30c"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['administrative_area'] = single_value
+            # postalCode
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30d"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['postal_code'] = single_value
+            # country
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30e"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['country'] = single_value
+            # electronicMailAddress
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["30f"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['electronic_mail_address'] = single_value
 
-        if len(primary_vals[CKAN_secondary_lang]) < 1:
-            reportError(
-                HNAP_fileIdentifier,[
-                    schema_ref["30"]['CKAN API property'],
-                    'Value not found in '+schema_ref["30"]['Reference']
-                ])
+            if len(primary_vals[CKAN_secondary_lang]) < 1:
+                reportError(
+                    HNAP_fileIdentifier,[
+                        schema_ref["30"]['CKAN API property'],
+                        'Value not found in '+schema_ref["30"]['Reference']
+                    ])
 
-        json_record[schema_ref["29"]['CKAN API property']] = json.dumps(primary_vals)
+            json_record[schema_ref["29"]['CKAN API property']] = json.dumps(primary_vals)
 
 # CC::OpenMaps-31 Contact Email
 
-#"31","maintainer_email","Contact Email","Adresse électronique du contact","M","S","Free text","value","gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString"
+            # Single report out, multiple records combined
+            schema_ref["31"]['Occurrences'] = 'R'
+            json_record[schema_ref["31"]['CKAN API property']] = {}
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["31"])
+            primary_data = []
+            if value:
+                for single_value in value:
+                    primary_data.append(single_value)
 
-        # Single report out, multiple records combined
-        schema_ref["31"]['Occurrences'] = 'R'
-        json_record[schema_ref["31"]['CKAN API property']] = {}
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["31"])
-        primary_data = []
-        if value:
-            for single_value in value:
-                primary_data.append(single_value)
-
-        if len(primary_data) > 0:
-            json_record[schema_ref["31"]['CKAN API property']] = ','.join(value)
+            if len(primary_data) > 0:
+                json_record[schema_ref["31"]['CKAN API property']] = ','.join(value)
 
 # CC::OpenMaps-32 Description (English)
 
-        json_record[schema_ref["32"]['CKAN API property']] = {}
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["32"])
-        if value:
-            json_record[
-                schema_ref["32"]['CKAN API property']
-            ][CKAN_primary_lang] = value
+            json_record[schema_ref["32"]['CKAN API property']] = {}
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["32"])
+            if value:
+                json_record[
+                    schema_ref["32"]['CKAN API property']
+                ][CKAN_primary_lang] = value
 
-        # XXX Check that there are values
+            # XXX Check that there are values
 
 # CC::OpenMaps-33 Description (French)
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["33"])
-        if value:
-            json_record[
-                schema_ref["32"]['CKAN API property']
-            ][CKAN_secondary_lang] = value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["33"])
+            if value:
+                json_record[
+                    schema_ref["32"]['CKAN API property']
+                ][CKAN_secondary_lang] = value
 
-        # XXX Check that there are values
+            # XXX Check that there are values
 
 # CC::OpenMaps-34 Keywords (English)
 
-        primary_vals = []
-        json_record[schema_ref["34"]['CKAN API property']] = {}
-        json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang] = []
+            primary_vals = []
+            json_record[schema_ref["34"]['CKAN API property']] = {}
+            json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang] = []
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["34"])
-        if value:
-            for single_value in value:
-                p = re.compile('^[A-Z][A-Z] [^>]+ > ')
-                single_value = p.sub('', single_value)
-                single_value = single_value.strip()
-                if len(single_value) >= 2:
-                    if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                        reportError(
-                            HNAP_fileIdentifier,[
-                                schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
-                                "Invalid character in Keyword",
-                                'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
-                            ])
-                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
-                        json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
-            if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
-                        "No keywords"
-                    ])
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["34"])
+            if value:
+                for single_value in value:
+                    p = re.compile('^[A-Z][A-Z] [^>]+ > ')
+                    single_value = p.sub('', single_value)
+                    single_value = single_value.strip()
+                    if len(single_value) >= 2:
+                        if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                            reportError(
+                                HNAP_fileIdentifier,[
+                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                                    "Invalid character in Keyword",
+                                    "Must be alpha-numeric, space or '-_./;>+& ["+single_value+']'
+                                ])
+                        if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
+                            json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
+                if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                            "No keywords"
+                        ])
 
 # CC::OpenMaps-35 Keywords (French)
 
-        json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang] = []
+            json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang] = []
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["34"])
-        if value:
-            for single_value in value:
-                p = re.compile('^[A-Z][A-Z] [^>]+ > ')
-                single_value = p.sub('', single_value)
-                if len(single_value) >= 2:
-                    if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                        reportError(
-                            HNAP_fileIdentifier,[
-                                schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
-                                "Invalid character in Keyword",
-                                'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
-                            ])
-                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
-                        json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
-            if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
-                        "No keywords"
-                    ])
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["35"])
+            if value:
+                for single_value in value:
+                    p = re.compile('^[A-Z][A-Z] [^>]+ > ')
+                    single_value = p.sub('', single_value)
+                    if len(single_value) >= 2:
+                        if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                            reportError(
+                                HNAP_fileIdentifier,[
+                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                                    "Invalid character in Keyword",
+                                    'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
+                                ])
+                        if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
+                            json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
+                if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                            "No keywords"
+                        ])
 
 # CC::OpenMaps-36 Subject
 
-        subject_values = []
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["36"])
-        if value:
-            for subject in value:
-                termsValue = fetchCLValue(
-                    subject.strip(), CL_Subjects)
-                if termsValue:
-                    for single_item in termsValue[3].split(','):
-                        subject_values.append(single_item.strip().lower())
+            subject_values = []
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["36"])
+            if value:
+                for subject in value:
+                    termsValue = fetchCLValue(
+                        subject.strip(), CL_Subjects)
+                    if termsValue:
+                        for single_item in termsValue[3].split(','):
+                            subject_values.append(single_item.strip().lower())
 
-            if len(subject_values) < 1:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["36"]['CKAN API property'],
-                        'Value not found in '+schema_ref["36"]['Reference']
-                    ])
-            else:
-                json_record[schema_ref["36"]['CKAN API property']] = list(set(subject_values))
-
+                if len(subject_values) < 1:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["36"]['CKAN API property'],
+                            'Value not found in '+schema_ref["36"]['Reference']
+                        ])
+                else:
+                    json_record[schema_ref["36"]['CKAN API property']] = list(set(subject_values))
 
 # CC::OpenMaps-37 Topic Category
 
-        topicCategory_values = []
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["37"])
-        if value:
-            for topicCategory in value:
-                termsValue = fetchCLValue(
-                    topicCategory.strip(), napMD_KeywordTypeCode)
-                if termsValue:
-                    topicCategory_values.append(termsValue[0])
+            topicCategory_values = []
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["37"])
+            if value:
+                for topicCategory in value:
+                    termsValue = fetchCLValue(
+                        topicCategory.strip(), napMD_KeywordTypeCode)
+                    if termsValue:
+                        topicCategory_values.append(termsValue[0])
 
-            if len(topicCategory_values) < 1:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["37"]['CKAN API property'],
-                        'Value not found in '+schema_ref["37"]['Reference']
-                    ])
-            else:
-                json_record[schema_ref["37"]['CKAN API property']] = topicCategory_values
+                if len(topicCategory_values) < 1:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["37"]['CKAN API property'],
+                            'Value not found in '+schema_ref["37"]['Reference']
+                        ])
+                else:
+                    json_record[schema_ref["37"]['CKAN API property']] = topicCategory_values
 
 
 # CC::OpenMaps-38 Audience
@@ -665,40 +689,40 @@ def main():
 
 # CC::OpenMaps-41 Spatial
 
-        north = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41n"])
-        if north:
-            south = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41s"])
-            if south:
-                east = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41e"])
-                if east:
-                    west = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41w"])
-                    if west:
-                        GeoJSON = {}
-                        GeoJSON['type'] = "Polygon"
-                        GeoJSON['coordinates'] = [[
-                            [west, south],
-                            [east, south],
-                            [east, north],
-                            [west, north],
-                            [west, south]
-                        ]]
+            north = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41n"])
+            if north:
+                south = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41s"])
+                if south:
+                    east = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41e"])
+                    if east:
+                        west = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41w"])
+                        if west:
+                            GeoJSON = {}
+                            GeoJSON['type'] = "Polygon"
+                            GeoJSON['coordinates'] = [[
+                                [west, south],
+                                [east, south],
+                                [east, north],
+                                [west, north],
+                                [west, south]
+                            ]]
 
-                        #json_record[schema_ref["41"]['CKAN API property']] = json.dumps(GeoJSON)
-                        json_record[schema_ref["41"]['CKAN API property']] = '{"type": "Polygon","coordinates": [[[%s,%s],[%s,%s],[%s,%s],[%s,%s],[%s,%s]]]}' % (west[0],south[0],east[0],south[0],east[0],north[0],west[0],north[0],west[0],south[0])
+                            #json_record[schema_ref["41"]['CKAN API property']] = json.dumps(GeoJSON)
+                            json_record[schema_ref["41"]['CKAN API property']] = '{"type": "Polygon","coordinates": [[[%s,%s],[%s,%s],[%s,%s],[%s,%s],[%s,%s]]]}' % (west[0],south[0],east[0],south[0],east[0],north[0],west[0],north[0],west[0],south[0])
 
 # CC::OpenMaps-42 Geographic Region Name
 # TBS 2016-04-13: Not in HNAP, we can skip (the only providing the bounding box, not the region name)
 
 # CC::OpenMaps-43 Time Period Coverage Start Date
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["43"])
-        if value:
-            if sanityDate(
-                HNAP_fileIdentifier,[
-                    schema_ref["43"]['CKAN API property']+'-start'
-                ],
-                maskDate(value)
-            ):
-                json_record[schema_ref["43"]['CKAN API property']] = maskDate(value)
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["43"])
+            if value:
+                if sanityDate(
+                    HNAP_fileIdentifier,[
+                        schema_ref["43"]['CKAN API property']+'-start'
+                    ],
+                    maskDate(value)
+                ):
+                    json_record[schema_ref["43"]['CKAN API property']] = maskDate(value)
 
 # CC::OpenMaps-44 Time Period Coverage End Date
 #   ADAPTATION #2
@@ -714,88 +738,89 @@ def main():
 #     Since changing the source seems to be impossible we adapt by
 #     replacing a blank entry with the equally ugly '9999-99-99' forced
 #     end in CKAN.
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["44"])
-        if value:
 
-            check_for_blank = value
-            if check_for_blank == '':
-                check_for_blank = '9999-09-09'
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["44"])
+            if value:
 
-            if sanityDate(
-                HNAP_fileIdentifier,[
-                    schema_ref["44"]['CKAN API property']+'-end'
-                ],
-                maskDate(check_for_blank)
-            ):
-                json_record[schema_ref["44"]['CKAN API property']] = maskDate(check_for_blank)
+                check_for_blank = value
+                if check_for_blank == '':
+                    check_for_blank = '9999-09-09'
+
+                if sanityDate(
+                    HNAP_fileIdentifier,[
+                        schema_ref["44"]['CKAN API property']+'-end'
+                    ],
+                    maskDate(check_for_blank)
+                ):
+                    json_record[schema_ref["44"]['CKAN API property']] = maskDate(check_for_blank)
 
 # CC::OpenMaps-45 Maintenance and Update Frequency
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["45"])
-        if value:
-            # Can you find the CL entry?
-            termsValue = fetchCLValue(value, napMD_MaintenanceFrequencyCode)
-            if not termsValue:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["45"]['CKAN API property'],
-                        'Value not found in '+schema_ref["45"]['Reference']
-                    ])
-            else:
-                json_record[schema_ref["45"]['CKAN API property']] = termsValue[2]
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["45"])
+            if value:
+                # Can you find the CL entry?
+                termsValue = fetchCLValue(value, napMD_MaintenanceFrequencyCode)
+                if not termsValue:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["45"]['CKAN API property'],
+                            'Value not found in '+schema_ref["45"]['Reference']
+                        ])
+                else:
+                    json_record[schema_ref["45"]['CKAN API property']] = termsValue[2]
 
 
 # CC::OpenMaps-46 Date Published
 # CC::OpenMaps-47 Date Modified
 
-        ##################################################
-        # These are a little different, we have to do these odd birds manually
-        r = record.xpath(
-            schema_ref["46"]["FGP XPATH"],
-            namespaces={
-                'gmd': 'http://www.isotc211.org/2005/gmd',
-                'gco': 'http://www.isotc211.org/2005/gco'})
-        if(len(r)):
-            for cn in r:
-                input_types = {}
-                inKey = []
-                inVal = ''
-                # Decypher which side has the code and which has the data,
-                # yea... it changes -sigh-
-                # Keys will always use the ;
-                if len(cn[0][0].text.split(';')) > 1:
-                    inKey = cn[0][0].text.split(';')
-                    inVal = cn[1][0].text.strip()
-                else:
-                    inKey = cn[1][0].text.split(';')
-                    inVal = cn[0][0].text.strip()
+            ##################################################
+            # These are a little different, we have to do these odd birds manually
+            r = record.xpath(
+                schema_ref["46"]["FGP XPATH"],
+                namespaces={
+                    'gmd': 'http://www.isotc211.org/2005/gmd',
+                    'gco': 'http://www.isotc211.org/2005/gco'})
+            if(len(r)):
+                for cn in r:
+                    input_types = {}
+                    inKey = []
+                    inVal = ''
+                    # Decypher which side has the code and which has the data,
+                    # yea... it changes -sigh-
+                    # Keys will always use the ;
+                    if len(cn[0][0].text.split(';')) > 1:
+                        inKey = cn[0][0].text.split(';')
+                        inVal = cn[1][0].text.strip()
+                    else:
+                        inKey = cn[1][0].text.split(';')
+                        inVal = cn[0][0].text.strip()
 
-                for input_type in inKey:
-                    input_type = input_type.strip()
-                    if input_type == u'publication':
-                        if sanityDate(
-                                HNAP_fileIdentifier,[
-                                    schema_ref["46"]['CKAN API property']
-                                ],
-                                maskDate(inVal)):
-                            json_record[schema_ref["46"]['CKAN API property']] = maskDate(inVal)
-                            break
+                    for input_type in inKey:
+                        input_type = input_type.strip()
+                        if input_type == u'publication':
+                            if sanityDate(
+                                    HNAP_fileIdentifier,[
+                                        schema_ref["46"]['CKAN API property']
+                                    ],
+                                    maskDate(inVal)):
+                                json_record[schema_ref["46"]['CKAN API property']] = maskDate(inVal)
+                                break
 
-                    if input_type == u'revision' or input_type == u'révision':
-                        if sanityDate(
-                                HNAP_fileIdentifier,[
-                                    schema_ref["47"]['CKAN API property']
-                                ],
-                                maskDate(inVal)):
-                            json_record[schema_ref["47"]['CKAN API property']] = maskDate(inVal)
-                            break
+                        if input_type == u'revision' or input_type == u'révision':
+                            if sanityDate(
+                                    HNAP_fileIdentifier,[
+                                        schema_ref["47"]['CKAN API property']
+                                    ],
+                                    maskDate(inVal)):
+                                json_record[schema_ref["47"]['CKAN API property']] = maskDate(inVal)
+                                break
 
-        if 'date_published' not in json_record:
-            reportError(
-                HNAP_fileIdentifier,[
-                    schema_ref["37"]['CKAN API property'],
-                    'mandatory field missing'
-                ])
+            if 'date_published' not in json_record:
+                reportError(
+                    HNAP_fileIdentifier,[
+                        schema_ref["37"]['CKAN API property'],
+                        'mandatory field missing'
+                    ])
 
 # CC::OpenMaps-48 Date Released
 # SYSTEM GENERATED
@@ -820,214 +845,214 @@ def main():
 
 # CC::OpenMaps-56 Reference System Information
 
-        vala = valb = valc = ''
+            vala = valb = valc = ''
 
-        # code
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56a"])
-        if value:
-            vala = value
-        # codeSpace
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56b"])
-        if value:
-            valb = value
-        # version
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56c"])
-        if value:
-            valc = value
+            # code
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56a"])
+            if value:
+                vala = value
+            # codeSpace
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56b"])
+            if value:
+                valb = value
+            # version
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56c"])
+            if value:
+                valc = value
 
-        json_record[schema_ref["56"]['CKAN API property']] = vala + ',' + valb + ',' + valc
+            json_record[schema_ref["56"]['CKAN API property']] = vala + ',' + valb + ',' + valc
 
 # CC::OpenMaps-57 Distributor (English)
 
-        primary_vals = {}
-        primary_vals[CKAN_primary_lang] = {}
-        primary_vals[CKAN_secondary_lang] = {}
+            primary_vals = {}
+            primary_vals[CKAN_primary_lang] = {}
+            primary_vals[CKAN_secondary_lang] = {}
 
-        # organizationName
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57a"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['organization_name'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58a"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['organization_name'] = single_value
+            # organizationName
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57a"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['organization_name'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58a"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['organization_name'] = single_value
 
-        # phone
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57b"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['phone'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58b"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['phone'] = single_value
+            # phone
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57b"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['phone'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58b"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['phone'] = single_value
 
-        # address
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57c"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['address'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58c"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['address'] = single_value
+            # address
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57c"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['address'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58c"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['address'] = single_value
 
-        # city
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57d"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['city'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58d"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['city'] = single_value
+            # city
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57d"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['city'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58d"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['city'] = single_value
 
-        # administrativeArea
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57e"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['administrative_area'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58e"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['administrative_area'] = single_value
+            # administrativeArea
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57e"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['administrative_area'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58e"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['administrative_area'] = single_value
 
-        # postalCode
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57f"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['postal_code'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58f"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['postal_code'] = single_value
+            # postalCode
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57f"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['postal_code'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58f"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['postal_code'] = single_value
 
-        # country
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57g"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['country'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58g"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['country'] = single_value
+            # country
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57g"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['country'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58g"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['country'] = single_value
 
-        # electronicMailAddress  mandatory
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57h"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_primary_lang]['electronic_mail_address'] = single_value
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58h"])
-        if value:
-            for single_value in value:
-                primary_vals[CKAN_secondary_lang]['electronic_mail_address'] = single_value
+            # electronicMailAddress  mandatory
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57h"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_primary_lang]['electronic_mail_address'] = single_value
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["58h"])
+            if value:
+                for single_value in value:
+                    primary_vals[CKAN_secondary_lang]['electronic_mail_address'] = single_value
 
-        # role mandatory
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57i"])
-        if value:
-            for single_value in value:
-                # Can you find the CL entry?
-                termsValue = fetchCLValue(single_value, napCI_RoleCode)
-                if not termsValue:
-                    reportError(
-                        HNAP_fileIdentifier,[
-                            schema_ref["57"]['CKAN API property'],
-                            'Value not found in '+schema_ref["57"]['Reference']
-                        ])
-                else:
-                    primary_vals[CKAN_primary_lang]['role'] = termsValue[0]
-                    primary_vals[CKAN_secondary_lang]['role'] = termsValue[1]
+            # role mandatory
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["57i"])
+            if value:
+                for single_value in value:
+                    # Can you find the CL entry?
+                    termsValue = fetchCLValue(single_value, napCI_RoleCode)
+                    if not termsValue:
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["57"]['CKAN API property'],
+                                'Value not found in '+schema_ref["57"]['Reference']
+                            ])
+                    else:
+                        primary_vals[CKAN_primary_lang]['role'] = termsValue[0]
+                        primary_vals[CKAN_secondary_lang]['role'] = termsValue[1]
 
-        json_record[schema_ref["57"]['CKAN API property']] = json.dumps(primary_vals)
+            json_record[schema_ref["57"]['CKAN API property']] = json.dumps(primary_vals)
 
-        #json_record[schema_ref["57"]['CKAN API property']] = {}
-        #json_record[schema_ref["57"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_vals)
-        #json_record[schema_ref["57"]['CKAN API property']][CKAN_secondary_lang] = ','.join(second_vals)
+            #json_record[schema_ref["57"]['CKAN API property']] = {}
+            #json_record[schema_ref["57"]['CKAN API property']][CKAN_primary_lang] = ','.join(primary_vals)
+            #json_record[schema_ref["57"]['CKAN API property']][CKAN_secondary_lang] = ','.join(second_vals)
 
 # CC::OpenMaps-59 Status
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["59"])
-        if value:
-            # Can you find the CL entry?
-            termsValue = fetchCLValue(value, napMD_ProgressCode)
-            if not termsValue:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["59"]['CKAN API property'],
-                        'Value not found in '+schema_ref["59"]['Reference']
-                    ])
-            else:
-                json_record[schema_ref["59"]['CKAN API property']] = termsValue[0]
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["59"])
+            if value:
+                # Can you find the CL entry?
+                termsValue = fetchCLValue(value, napMD_ProgressCode)
+                if not termsValue:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["59"]['CKAN API property'],
+                            'Value not found in '+schema_ref["59"]['Reference']
+                        ])
+                else:
+                    json_record[schema_ref["59"]['CKAN API property']] = termsValue[0]
 
 # CC::OpenMaps-60 Association Type
 
-        associationTypes_array = []
+            associationTypes_array = []
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["60"])
-        # Not mandatory, process if you have it
-        if value and len(value) > 0:
-            # You have to itterate to find a valid one, not neccesaraly the
-            for associationType in value:
-                # Can you find the CL entry?
-                termsValue = fetchCLValue(
-                    associationType, napDS_AssociationTypeCode)
-                if not termsValue:
-                    termsValue = []
-                else:
-                    associationTypes_array.append(termsValue[2])
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["60"])
+            # Not mandatory, process if you have it
+            if value and len(value) > 0:
+                # You have to itterate to find a valid one, not neccesaraly the
+                for associationType in value:
+                    # Can you find the CL entry?
+                    termsValue = fetchCLValue(
+                        associationType, napDS_AssociationTypeCode)
+                    if not termsValue:
+                        termsValue = []
+                    else:
+                        associationTypes_array.append(termsValue[2])
 
-        if len(associationTypes_array):
-            json_record[schema_ref["60"]['CKAN API property']] = ','.join(associationTypes_array)
+            if len(associationTypes_array):
+                json_record[schema_ref["60"]['CKAN API property']] = ','.join(associationTypes_array)
 
 # CC::OpenMaps-61 Aggregate Dataset Identifier
 
-        aggregateDataSetIdentifier_array = []
+            aggregateDataSetIdentifier_array = []
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["61"])
-        # Not mandatory, process if you have it
-        if value and len(value) > 0:
-            for aggregateDataSetIdentifier in value:
-                (primary, secondary) =\
-                    aggregateDataSetIdentifier.strip().split(';')
-                aggregateDataSetIdentifier_array.append(primary.strip())
-                aggregateDataSetIdentifier_array.append(secondary.strip())
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["61"])
+            # Not mandatory, process if you have it
+            if value and len(value) > 0:
+                for aggregateDataSetIdentifier in value:
+                    (primary, secondary) =\
+                        aggregateDataSetIdentifier.strip().split(';')
+                    aggregateDataSetIdentifier_array.append(primary.strip())
+                    aggregateDataSetIdentifier_array.append(secondary.strip())
 
-        json_record[schema_ref["61"]['CKAN API property']] = ','.join(
-            aggregateDataSetIdentifier_array)
+            json_record[schema_ref["61"]['CKAN API property']] = ','.join(
+                aggregateDataSetIdentifier_array)
 
 # CC::OpenMaps-62 Spatial Representation Type
 
-        value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["62"])
+            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["62"])
 
-        json_record[schema_ref["62"]['CKAN API property']] = {}
-        spatialRepresentationType_array = []
+            json_record[schema_ref["62"]['CKAN API property']] = {}
+            spatialRepresentationType_array = []
 
-        if value:
-            # You have to itterate to find a valid one,
-            # not neccesaraly the first
-            for spatialRepresentationType in value:
-                # Can you find the CL entry?
-                termsValue = fetchCLValue(
-                    spatialRepresentationType,
-                    napMD_SpatialRepresentationTypeCode)
-                if not termsValue:
-                    termsValue = []
-                else:
-                    spatialRepresentationType_array.append(termsValue[0])
+            if value:
+                # You have to itterate to find a valid one,
+                # not neccesaraly the first
+                for spatialRepresentationType in value:
+                    # Can you find the CL entry?
+                    termsValue = fetchCLValue(
+                        spatialRepresentationType,
+                        napMD_SpatialRepresentationTypeCode)
+                    if not termsValue:
+                        termsValue = []
+                    else:
+                        spatialRepresentationType_array.append(termsValue[0])
 
-        json_record[schema_ref["62"]['CKAN API property']] = ','.join(
-            spatialRepresentationType_array)
+            json_record[schema_ref["62"]['CKAN API property']] = ','.join(
+                spatialRepresentationType_array)
 
 # CC::OpenMaps-63 Jurisdiction
 # TBS 2016-04-13: Not in HNAP, but can we default text to ‘Federal’ / ‘Fédéral
 
-        json_record[schema_ref["63"]['CKAN API property']] = schema_ref["63"]['FGP XPATH']
+            json_record[schema_ref["63"]['CKAN API property']] = schema_ref["63"]['FGP XPATH']
 
 # CC::OpenMaps-64 Licence
 # TBS (call): use ca-ogl-lgo
 
-        json_record[schema_ref["64"]['CKAN API property']] = schema_ref["64"]['FGP XPATH']
+            json_record[schema_ref["64"]['CKAN API property']] = schema_ref["64"]['FGP XPATH']
 
 # Ignored code from previous harvestor that would trigger an error on
 # invalid supplied licences.  We now assume the OGL is understood as
@@ -1124,8 +1149,6 @@ def main():
 #                ',' +
 #                'license,More than one licence,""')
 
-
-
 # CC::OpenMaps-65 Unique Identifier
 # System generated
 
@@ -1160,110 +1183,124 @@ def main():
 #
 # How about September 1?
 
-        json_record['resources'] = []
-        record_resources = fetchXMLArray(
-            record,
-            "gmd:distributionInfo/" +
-            "gmd:MD_Distribution/" +
-            "gmd:transferOptions/" +
-            "gmd:MD_DigitalTransferOptions/" +
-            "gmd:onLine/" +
-            "gmd:CI_OnlineResource")
+            json_record['resources'] = []
+            record_resources = fetchXMLArray(
+                record,
+                "gmd:distributionInfo/" +
+                "gmd:MD_Distribution/" +
+                "gmd:transferOptions/" +
+                "gmd:MD_DigitalTransferOptions/" +
+                "gmd:onLine/" +
+                "gmd:CI_OnlineResource")
 
-        resource_no = 0
-        for resource in record_resources:
-            resource_no += 1
+            resource_no = 0
+            for resource in record_resources:
+                resource_no += 1
 
-            json_record_resource = {}
-            json_record_resource[schema_ref["66"]['CKAN API property']] = {}
+                json_record_resource = {}
+                json_record_resource[schema_ref["66"]['CKAN API property']] = {}
 
 # CC::OpenMaps-66 Title (English)
 
-            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["66"])
-            if value:
-                json_record_resource[schema_ref["66"]['CKAN API property']][CKAN_primary_lang] = value
+                value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["66"])
+                if value:
+                    json_record_resource[schema_ref["66"]['CKAN API property']][CKAN_primary_lang] = value
 
 # CC::OpenMaps-67 Title (English)
 
-            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["67"])
-            if value:
-                json_record_resource[schema_ref["66"]['CKAN API property']][CKAN_secondary_lang] = value
+                value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["67"])
+                if value:
+                    json_record_resource[schema_ref["66"]['CKAN API property']][CKAN_secondary_lang] = value
 
 # CC::OpenMaps-69 Resource Type
 # CC::OpenMaps-70 Format
 # CC::OpenMaps-73 Language
 
-            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["69-70-73"])
-            if value:
-                description_text = value.strip()
+                value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["69-70-73"])
+                if value:
+                    description_text = value.strip()
 
-                if description_text.count(';') != 2:
+                    if description_text.count(';') != 2:
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["69-70-73"]['CKAN API property'],
+                                'Content, Format or Language missing, must be: contentType;format;lang,lang',
+                                description_text
+                            ])
+                    else:
+                        (res_contentType, res_format,
+                         res_language) = description_text.split(';')
+
+                        languages_in = res_language.strip().split(',')
+                        languages_out = []
+                        for language in languages_in:
+                            if language.strip() == 'eng':
+                                languages_out.append('en')
+                            if language.strip() == 'fra':
+                                languages_out.append('fr')
+                            if language.strip() == 'zxx': # Non linguistic
+                                languages_out.append('zxx')
+                        language_str = languages_out[0]
+
+                        json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
+                        json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
+                        json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
+
+                        #XXX Super duper hack
+                        if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
+                            json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
+                        if json_record_resource[schema_ref["69"]['CKAN API property']] == 'Supporting Documents':
+                            json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
+                        if json_record_resource[schema_ref["69"]['CKAN API property']] == 'Supporting Document':
+                            json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
+                        if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
+                            json_record_resource[schema_ref["69"]['CKAN API property']] = 'web_service'
+                        if json_record_resource[schema_ref["69"]['CKAN API property']] == 'données':
+                            json_record_resource[schema_ref["69"]['CKAN API property']] = 'dataset'
+
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Web App':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'HTML'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'IOS Application':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'IPA'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Blackberry Application':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'COD'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Windows Mobile':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'EXE'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Android Application':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'APK'
+
+                else:
                     reportError(
                         HNAP_fileIdentifier,[
                             schema_ref["69-70-73"]['CKAN API property'],
-                            'Content, Format or Language missing, must be: contentType;format;lang,lang',
-                            description_text
+                            'format,mandatory field missing'
                         ])
-                else:
-                    (res_contentType, res_format,
-                     res_language) = description_text.split(';')
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["69-70-73"]['CKAN API property'],
+                            'language,mandatory field missing'
+                        ])
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["69-70-73"]['CKAN API property'],
+                            'contentType,mandatory field missing'
+                        ])
 
-                    languages_in = res_language.strip().split(',')
-                    languages_out = []
-                    for language in languages_in:
-                        if language.strip() == 'eng':
-                            languages_out.append('en')
-                        if language.strip() == 'fra':
-                            languages_out.append('fr')
-                        if language.strip() == 'zxx': # Non linguistic
-                            languages_out.append('zxx')
-                    language_str = languages_out[0]
+                if json_record_resource[schema_ref["69"]['CKAN API property']].lower() not in ResourceType:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["69-70-73"]['CKAN API property'],
+                            'invalid resource type',
+                            json_record_resource[schema_ref["69"]['CKAN API property']]
+                        ])
 
-                    json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
-                    #XXX Super duper hack
-                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
-                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
-                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'Supporting Documents':
-                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
-                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'Supporting Document':
-                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
-                    if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
-                        json_record_resource[schema_ref["69"]['CKAN API property']] = 'web_service'
-
-                    json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
-                    json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
-            else:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["69-70-73"]['CKAN API property'],
-                        'format,mandatory field missing'
-                    ])
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["69-70-73"]['CKAN API property'],
-                        'language,mandatory field missing'
-                    ])
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["69-70-73"]['CKAN API property'],
-                        'contentType,mandatory field missing'
-                    ])
-
-            if json_record_resource[schema_ref["69"]['CKAN API property']].lower() not in ResourceType:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["69-70-73"]['CKAN API property'],
-                        'invalid resource type',
-                        json_record_resource[schema_ref["69"]['CKAN API property']]
-                    ])
-
-            if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["69-70-73"]['CKAN API property'],
-                        'invalid resource format',
-                        json_record_resource[schema_ref["70"]['CKAN API property']]
-                    ])
+                if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["69-70-73"]['CKAN API property'],
+                            'invalid resource format',
+                            json_record_resource[schema_ref["70"]['CKAN API property']]
+                        ])
 
 # CC::OpenMaps-71 Character Set
 # TBS 2016-04-13: Not in HNAP, we can skip
@@ -1272,9 +1309,9 @@ def main():
 
 # CC::OpenMaps-74 Download URL
 
-            value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["74"])
-            if value:
-                json_record_resource[schema_ref["74"]['CKAN API property']] = value
+                value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["74"])
+                if value:
+                    json_record_resource[schema_ref["74"]['CKAN API property']] = value
 
 # CC::OpenMaps-75 Title (English)
 # XXX Need to confirm why this is not included
@@ -1299,8 +1336,8 @@ def main():
 # CC::OpenMaps-80 Record URL
 # TBS 2016-04-13: Not in HNAP, we can skip
 
-            # Append the resource to the Open Maps record
-            json_record['resources'].append(json_record_resource)
+                # Append the resource to the Open Maps record
+                json_record['resources'].append(json_record_resource)
 
 ##################################################
 ##################################################
@@ -1311,15 +1348,15 @@ def main():
 ##################################################
 ##################################################
 ##################################################
-        if HNAP_fileIdentifier in error_records:
-            print "Reject: "+str(HNAP_fileIdentifier)
-        else:
-            print "Accept: "+str(HNAP_fileIdentifier)
-            json_record['imso_approval'] = 'true'
-            json_record['ready_to_publish'] = 'true'
-            json_record['state'] = 'active'
-            #if error don't do this 
-            json_records.append(json_record)
+            if HNAP_fileIdentifier in error_records:
+                print "Reject: "+str(HNAP_fileIdentifier)
+            else:
+                print "Accept: "+str(HNAP_fileIdentifier)
+                json_record['imso_approval'] = 'true'
+                json_record['ready_to_publish'] = 'true'
+                json_record['state'] = 'active'
+                #if error don't do this 
+                json_records.append(json_record)
 ##################################################
 ##################################################
 ##################################################
