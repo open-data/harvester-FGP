@@ -599,7 +599,7 @@ def main():
                                 HNAP_fileIdentifier,[
                                     schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
                                     "Invalid character in Keyword",
-                                    "Must be alpha-numeric, space or '-_./;>+& ["+single_value+']'
+                                    "Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
                                 ])
                         if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
                             json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
@@ -625,7 +625,7 @@ def main():
                                 HNAP_fileIdentifier,[
                                     schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
                                     "Invalid character in Keyword",
-                                    'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
+                                    'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
                                 ])
                         if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
                             json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
