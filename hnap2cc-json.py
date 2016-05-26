@@ -599,7 +599,7 @@ def main():
                                 HNAP_fileIdentifier,[
                                     schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
                                     "Invalid character in Keyword",
-                                    'Must be alpha-numeric, space or \-_./;>+& ['+single_value+']'
+                                    "Must be alpha-numeric, space or '-_./;>+& ["+single_value+']'
                                 ])
                         if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
                             json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
@@ -1243,6 +1243,9 @@ def main():
                         language_str = languages_out[0]
 
                         json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
+                        json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
+                        json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
+
                         #XXX Super duper hack
                         if json_record_resource[schema_ref["69"]['CKAN API property']] == 'supporting document':
                             json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
@@ -1252,9 +1255,20 @@ def main():
                             json_record_resource[schema_ref["69"]['CKAN API property']] = 'guide'
                         if json_record_resource[schema_ref["69"]['CKAN API property']] == 'web service':
                             json_record_resource[schema_ref["69"]['CKAN API property']] = 'web_service'
+                        if json_record_resource[schema_ref["69"]['CKAN API property']] == 'données':
+                            json_record_resource[schema_ref["69"]['CKAN API property']] = 'dataset'
 
-                        json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
-                        json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Web App':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'HTML'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'IOS Application':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'IPA'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Blackberry Application':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'COD'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Windows Mobile':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'EXE'
+                        if json_record_resource[schema_ref["70"]['CKAN API property']] == 'Android Application':
+                            json_record_resource[schema_ref["70"]['CKAN API property']] = 'APK'
+
                 else:
                     reportError(
                         HNAP_fileIdentifier,[
