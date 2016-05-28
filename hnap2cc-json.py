@@ -606,31 +606,34 @@ def main():
 # END ADAPTATION
                     keyword_error = canada_tags(single_value).replace('"', '""')
 
-# ADAPTATION #4
+# ADAPTATION #5
 # 2016-05-27 - call
 # Alexandre Bolieux asked if I could replace commas with something valid.  I'm
 # replacing them with semi-colons which can act as a seperator character like
 # the comma but get past that reserved character
                     if re.search('length is more than maximum 140', keyword_error, re.UNICODE):
                         pass
+                    else:
 # END ADAPTATION
-                    elif not keyword_error == '':
-                    #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                        reportError(
-                            HNAP_fileIdentifier,[
-                                schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
-                                "Invalid Keyword",
-                                keyword_error
-                                #"Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
-                            ])
-                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
-                        json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
-                if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
-                    reportError(
-                        HNAP_fileIdentifier,[
-                            schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
-                            "No keywords"
-                        ])
+                        if not keyword_error == '':
+                        #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                            reportError(
+                                HNAP_fileIdentifier, [
+                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                                    "Invalid Keyword",
+                                    keyword_error
+                                    #"Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
+                                ])
+                        else:
+                            if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
+                                json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
+
+#                        if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
+#                            reportError(
+#                                HNAP_fileIdentifier,[
+#                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+#                                    "No keywords"
+#                                ])
 
 # CC::OpenMaps-35 Keywords (French)
 
@@ -649,29 +652,33 @@ def main():
                     single_value = single_value.replace(',', ';')
 # END ADAPTATION
                     keyword_error = canada_tags(single_value).replace('"', '""')
+
 # ADAPTATION #5
 # 2016-05-27 - call
 # Alexandre Bolieux asked I drop keywords that exceed 140 characters
                     if re.search('length is more than maximum 140', keyword_error, re.UNICODE):
                         pass
+                    else:
 # END ADAPTATION
-                    elif not keyword_error == '':                      
-                    #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                        reportError(
-                            HNAP_fileIdentifier,[
-                                schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
-                                "Invalid Keyword",
-                                keyword_error
-                                #'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
-                            ])
-                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
-                        json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
-                if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
-                    reportError(
-                        HNAP_fileIdentifier,[
-                            schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
-                            "No keywords"
-                        ])
+                        if not keyword_error == '':
+                        #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                            reportError(
+                                HNAP_fileIdentifier, [
+                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                                    "Invalid Keyword",
+                                    keyword_error
+                                    #'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
+                                ])
+                        else:
+                            if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
+                                json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
+
+#                        if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
+#                            reportError(
+#                                HNAP_fileIdentifier,[
+#                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+#                                    "No keywords"
+#                                ])
 
 # CC::OpenMaps-36 Subject
 
