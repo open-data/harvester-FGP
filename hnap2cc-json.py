@@ -17,6 +17,11 @@ import time
 import re
 import codecs
 
+import unicodedata
+
+MIN_TAG_LENGTH = 2
+MAX_TAG_LENGTH = 140
+
 ##################################################
 # TL err/dbg
 error_output = []
@@ -593,16 +598,33 @@ def main():
                     p = re.compile('^[A-Z][A-Z] [^>]+ > ')
                     single_value = p.sub('', single_value)
                     single_value = single_value.strip()
-                    if len(single_value) >= 2:
-                        if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                            reportError(
-                                HNAP_fileIdentifier,[
-                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
-                                    "Invalid character in Keyword",
-                                    "Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
-                                ])
-                        if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
-                            json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
+# ADAPTATION #4
+# 2016-05-27 - call
+# Alexandre Bolieux asked I replace commas with something valid.  I'm replacing them with semi-colons
+# which can act as a seperator character like the comma but get past that reserved character
+                    single_value = single_value.replace(',', ';')
+# END ADAPTATION
+                    keyword_error = canada_tags(single_value).replace('"', '""')
+
+# ADAPTATION #4
+# 2016-05-27 - call
+# Alexandre Bolieux asked if I could replace commas with something valid.  I'm
+# replacing them with semi-colons which can act as a seperator character like
+# the comma but get past that reserved character
+                    if re.search('length is more than maximum 140', keyword_error, re.UNICODE):
+                        pass
+# END ADAPTATION
+                    elif not keyword_error == '':
+                    #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                                "Invalid Keyword",
+                                keyword_error
+                                #"Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
+                            ])
+                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
+                        json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
                 if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
                     reportError(
                         HNAP_fileIdentifier,[
@@ -619,16 +641,31 @@ def main():
                 for single_value in value:
                     p = re.compile('^[A-Z][A-Z] [^>]+ > ')
                     single_value = p.sub('', single_value)
-                    if len(single_value) >= 2:
-                        if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                            reportError(
-                                HNAP_fileIdentifier,[
-                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
-                                    "Invalid character in Keyword",
-                                    'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
-                                ])
-                        if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
-                            json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
+# ADAPTATION #4
+# 2016-05-27 - call
+# Alexandre Bolieux asked if I could replace commas with something valid.  I'm
+# replacing them with semi-colons which can act as a seperator character like
+# the comma but get past that reserved character
+                    single_value = single_value.replace(',', ';')
+# END ADAPTATION
+                    keyword_error = canada_tags(single_value).replace('"', '""')
+# ADAPTATION #5
+# 2016-05-27 - call
+# Alexandre Bolieux asked I drop keywords that exceed 140 characters
+                    if re.search('length is more than maximum 140', keyword_error, re.UNICODE):
+                        pass
+# END ADAPTATION
+                    elif not keyword_error == '':                      
+                    #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                                "Invalid Keyword",
+                                keyword_error
+                                #'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
+                            ])
+                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
+                        json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
                 if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
                     reportError(
                         HNAP_fileIdentifier,[
@@ -1293,6 +1330,8 @@ def main():
                             'invalid resource type',
                             json_record_resource[schema_ref["69"]['CKAN API property']]
                         ])
+                else:
+                    json_record_resource[schema_ref["69"]['CKAN API property']] = ResourceType[json_record_resource[schema_ref["69"]['CKAN API property']].lower()][0]
 
                 if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
                     reportError(
@@ -1461,6 +1500,7 @@ def sanityFirst(values):
 # Project specific data manipulation
 # maskDate(date)
 
+
 def maskDate(date):
     # default_date =\
     if len(date) >= 10:
@@ -1474,6 +1514,7 @@ def maskDate(date):
 # fetchXMLAttribute(objectToXpath, xpath, attribute)
 # fetchCLValue(SRCH_key, CL_array)
 
+
 # Fetch an array which may be subsections
 def fetchXMLArray(objectToXpath, xpath):
     return objectToXpath.xpath(xpath, namespaces={
@@ -1481,6 +1522,8 @@ def fetchXMLArray(objectToXpath, xpath):
         'gco': 'http://www.isotc211.org/2005/gco',
         'gml': 'http://www.opengis.net/gml/3.2',
         'csw': 'http://www.opengis.net/cat/csw/2.0.2'})
+
+
 # Extract values from your current position
 def fetchXMLValues(objectToXpath, xpath):
     values = []
@@ -1492,6 +1535,8 @@ def fetchXMLValues(objectToXpath, xpath):
             else:
                 values.append(namePart.text.strip())
     return values
+
+
 # Fetch an attribute instead of a an element
 def fetchXMLAttribute(objectToXpath, xpath, attribute):
     # Easy to miss this, clean and combine
@@ -1506,6 +1551,8 @@ def fetchXMLAttribute(objectToXpath, xpath, attribute):
         'gco': 'http://www.isotc211.org/2005/gco',
         'gml': 'http://www.opengis.net/gml/3.2',
         'csw': 'http://www.opengis.net/cat/csw/2.0.2'})
+
+
 # Fetch the value of a controled list ( at the bottom )
 def fetchCLValue(SRCH_key, CL_array):
     p = re.compile(' ')
@@ -1518,6 +1565,8 @@ def fetchCLValue(SRCH_key, CL_array):
         if SRCH_key == CL_key:
             return value
     return None
+
+
 # Schema aware fetch for generic items
 def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
     if schema_ref['Value Type'] == 'value':
@@ -1531,7 +1580,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             "codeListValue")
     else:
         reportError(
-            HNAP_fileIdentifier,[
+            HNAP_fileIdentifier, [
                 schema_ref['CKAN API property'],
                 'FETCH on undefined Value Type',
                 schema_ref['CKAN API property']+':'+schema_ref['Value Type']
@@ -1540,7 +1589,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
 
     if schema_ref['Requirement'] == 'M':
         if not sanityMandatory(
-            HNAP_fileIdentifier,[
+            HNAP_fileIdentifier, [
                 schema_ref['CKAN API property']
             ],
             tmp
@@ -1548,7 +1597,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             return False
     if schema_ref['Occurrences'] == 'S':
         if not sanitySingle(
-            HNAP_fileIdentifier,[
+            HNAP_fileIdentifier, [
                 schema_ref['CKAN API property']
             ],
             tmp
@@ -1558,6 +1607,50 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             return sanityFirst(tmp)
 
     return tmp
+
+##################################################
+# External validators
+# canada_tags(value)
+
+# Unceremoniously appropriated/repurposed from Ian Ward's change to CKAN and
+# clubbed into a shape I can use here.
+# https://github.com/open-data/ckanext-canada/commit/711236e39922d167991dc56a06e53f8328b11c4c
+# I should pull these tests in from CKAN but we don't have time to do the smart
+# thing quite yet.  Eventually I'll collect these errors from my attempt to
+# upload them to CKAN to keep up to date.  This happens when we generate system
+# level documentation to match.
+def canada_tags(value):
+    """
+    Accept
+    - unicode graphical (printable) characters
+    - single internal spaces (no double-spaces)
+
+    Reject
+    - commas
+    - tags that are too short or too long
+
+    Strip
+    - spaces at beginning and end
+    """
+    value = value.strip()
+    if len(value) < MIN_TAG_LENGTH:
+        return  u'Tag "%s" length is less than minimum %s' % (value, MIN_TAG_LENGTH)
+    if len(value) > MAX_TAG_LENGTH:
+        return u'Tag "%s" length is more than maximum %i'  % (value, MAX_TAG_LENGTH)
+    if u',' in value:
+        return u'Tag "%s" may not contain commas' % (value)
+    if u'  ' in value:
+        return u'Tag "%s" may not contain consecutive spaces' % (value)
+
+    caution = re.sub(ur'[\w ]*', u'', value)
+    for ch in caution:
+        category = unicodedata.category(ch)
+        if category.startswith('C'):
+            return u'Tag "%s" may not contain unprintable character U+%04x' % (value, ord(ch))
+        if category.startswith('Z'):
+            return u'Tag "%s" may not contain separator charater U+%04x' % (value, ord(ch))
+
+    return ''
 
 ##################################################
 # FGP specific Controled lists
@@ -1673,24 +1766,6 @@ napMD_MaintenanceFrequencyCode = {
     'RI_544'    :[u'semimonthly',              u'bimensuel',        u'P2M'],
 }
 
-
-# This metadata has to match CKAN required values
-#napMD_MaintenanceFrequencyCode = {
-#    'RI_532'    : [u'continual'],
-#    'RI_533'    : [u'daily'],
-#    'RI_534'    : [u'weekly'],
-#    'RI_535'    : [u'fortnightly'],
-#    'RI_536'    : [u'monthly'],
-#    'RI_537'    : [u'quarterly'],
-#    'RI_538'    : [u'biannually'],
-#    'RI_539'    : [u'annually'],
-#    'RI_540'    : [u'as_needed'],
-#    'RI_541'    : [u'irregular'],
-#    'RI_542'    : [u'not_planned'],
-#    'RI_543'    : [u'unknown'],
-#    'RI_544'    : [u'semimonthly'],
-#}
-
 # # In the mapping doc but not used
 # presentationForm
 # IC_89    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_89
@@ -1716,7 +1791,6 @@ napMD_MaintenanceFrequencyCode = {
 #    'RI_405'    : [u'diagramDigital',            u'diagrammeNumérique'],
 #    'RI_406'    : [u'diagramHardcopy',            u'diagrammePapier']
 # }
-
 
 napMD_KeywordTypeCode = {
     'farming'                                : [u'farming',                              u'Farming',                                  u'Agriculture'],
@@ -2072,216 +2146,414 @@ GC_Registry_of_Applied_Terms = {
     'Élections Canada'                                                                                                                                              : [u'Elections Canada',u'elections',u'Élections Canada',u'elections',u'285']
 }
 
-#new_resourceType =[
-#'List in Old Registry','English List for New Registry','French List for New Registry','API value for resource_type resource field'
-#'','First-level Term','Second-level Term','Terme de premier niveau','Terme de deuxième niveau',''
-#'--','--','--','--','--',''
-#'','abstract','--','sommaire','--','abstract'
-#'','agreement','--','entente','--','agreement'
-#'','agreement','contractual material','entente','contenu contractuel','contractual_material'
-#'','agreement','intergovernmental agreement','entente','entente intergouvernementale','intergovernmental_agreement'
-#'','agreement','lease','entente','bail','lease'
-#'','agreement','memorandum of understanding','entente','protocole d’entente','memorandum_of_understanding'
-#'','agreement','nondisclosure agreement','entente','accord de non divulgation','nondisclosure_agreement'
-#'','agreement','service-level agreement','entente','entente de niveau de service','service-level_agreement'
-#'','affidavit','','affidavit','','affidavit'
-#'','application','--','demande','--','application'
-#'API','api','','api','',''
-#'','architectural or technical design','--','conception architecturale ou technique','--','architectural_or_technical_design'
-#'','article','--','article','--','article'
-#'','assessment','--','évaluation','--','assessment'
-#'','assessment','audit','évaluation','audit','audit'
-#'','assessment','environmental assessment','évaluation','évaluation environnementale','environmental_assessment'
-#'','assessment','examination','évaluation','examen','examination'
-#'','assessment','gap assessment','évaluation','évaluation des écarts','gap_assessment'
-#'','assessment','lessons learned','évaluation','leçons apprises','lessons_learned'
-#'','assessment','performance indicator','évaluation','indicateur de rendement','performance_indicator'
-#'','assessment','risk assessment','évaluation','évaluation des risques','risk_assessment'
-#'','biography','--','biographie','--','biography'
-#'','briefing material','--','matériel de breffage','--','briefing_material'
-#'','briefing material','backgrounder','matériel de breffage','précis d’information','backgrounder'
-#'','business case','--','analyse de rentabilisation','--','business_case'
-#'','claim','','réclamation','','claim'
-#'','comments','--','commentaires','--','comments'
-#'','conference proceedings','--','actes de la conférence','--','conference_proceedings'
-#'','consultation','--','consultation','--','consultation'
-#'','contact information','--','coordonnées','--','contact_information'
-#'','correspondence','--','correspondance','--','correspondence'
-#'','correspondence','ministerial correspondence','correspondance','correspondance ministérielle','ministerial_correspondence'
-#'','correspondence','memorandum','correspondance','note de service','memorandum'
-#'','dataset','--','jeu de données','--','dataset'
-#'','delegation of authority','--','délégation des pouvoirs','--','delegation_of_authority'
-#'','educational material','--','matériel pédagogique','--','educational_material'
-#'','employment opportunity','--','possibilité d’emploi','--','employment_opportunity'
-#'','event','--','événement','--','event'
-#'','fact sheet','--','feuille de renseignements','--','fact_sheet'
-#'','financial material','--','document financier','--','financial_material'
-#'','financial material','budget','document financier','budget','budget'
-#'','financial material','funding proposal','document financier','proposition de financement','funding_proposal'
-#'','financial material','invoice','document financier','facture','invoice'
-#'','financial material','financial statement','document financier','états financiers','financial_statement'
-#'','form','--','formulaire','--','form'
-#'','framework','--','cadre','--','framework'
-#'','geospatial material','--','matériel géospatial','--','geospatial_material'
-#'Supporting Document','guide','--','guide','--','guide'
-#'','guide','best practices','guide','pratiques exemplaires','best_practices'
-#'','intellectual property statement','','Énoncé sur la propriété intellectuelle','','intellectual_property_statement'
-#'','legal complaint','--','plainte légale','--','legal_complaint'
-#'','legal opinion','--','avis juridique','--','legal_opinion'
-#'','legislation and regulations','--','lois et règlements','--','legislation_and_regulations'
-#'','licenses and permits','','licences et permis','','licenses_and_permits'
-#'','literary material','--','ouvrages littéraires','--','literary_material'
-#'','media release','statement','communiqué de presse','énoncé','statement'
-#'','media release','--','communiqué de presse','--','media_release'
-#'','meeting material','--','documentation de la réunion','--','meeting_material'
-#'','meeting material','agenda','documentation de la réunion','programme','agenda'
-#'','meeting material','minutes','documentation de la réunion','procès-verbaux','minutes'
-#'','memorandum to Cabinet','--','mémoire au Cabinet','--','memorandum_to_cabinet'
-#'','multimedia resource','','ressource multimédia','','multimedia_resource'
-#'','notice','--','avis','--','notice'
-#'','organizational description','--','description organisationnelle','--','organizational_description'
-#'','plan','--','plan','--','plan'
-#'','plan','business plan','plan','plan d’activités','business_plan'
-#'','plan','strategic plan','plan','plan stratégique','strategic_plan'
-#'','policy','--','politique','--','policy'
-#'','policy','white paper','politique','livre blanc','white_paper'
-#'','presentation','--','présentation','--','presentation'
-#'','procedure','--','procédure','--','procedure'
-#'','profile','--','profil','--','profile'
-#'','project material','--','documents du projet','--','project_material'
-#'','project material','project charter','documents du projet','charte de projet','project_charter'
-#'','project material','project plan','documents du projet','plan du projet','project_plan'
-#'','project material','project proposal','documents du projet','proposition de projet','project_proposal'
-#'','promotional material','--','documents promotionnels','--','promotional_material'
-#'','publication','','publication','','publication'
-#'','Q & A','FAQ','Q et R','foire aux questions','faq'
-#'','record of decision','--','compte rendu des décisions','--','record_of_decision'
-#'','report','--','rapport','--','report'
-#'','report','annual report','rapport','rapport annuel','annual_report'
-#'','report','interim report','rapport','rapport d’étape','interim_report'
-#'','research proposal','--','projet de recherche','--','research_proposal'
-#'','resource list','','liste de référence','','resource_list'
-#'','routing slip','','bordereau d’acheminement','','routing_slip'
-#'','Social media resource','blog entry','ressources des médias sociaux','entrée de blogue','blog_entry'
-#'','sound recording','','enregistrement sonore','','sound_recording'
-#'','specification','--','spécification','--','specification'
-#'','statistics','--','statistiques','--','statistics'
-#'','still image','','image fixe','','still_image'
-#'','submission','--','présentation','--','submission'
-#'','survey','--','sondage','--','survey'
-#'Data Dictionary','terminology','terminologie','--','terminology'
-#'','terms of reference','--','mandat','--','terms_of_reference'
-#'','tool','','outil','','tool'
-#'','training material','','matériel didactique','','training_material'
-#'','transcript','--','transcription','--','transcript'
-#'','web service','','service web','',''
-#'','website','','site Web','','website'
-#'','workflow','--','flux des travaux','--','workflow'
+ResourceType = {
+    'abstract'                               :[u'abstract'],
+    'sommaire'                               :[u'abstract'],
+    'agreement'                              :[u'agreement'],
+    'entente'                                :[u'agreement'],
+    'contractual material'                   :[u'contractual_material'],
+    'contenu contractuel'                    :[u'contractual_material'],
+    'intergovernmental agreement'            :[u'intergovernmental_agreement'],
+    'entente intergouvernementale'           :[u'intergovernmental_agreement'],
+    'lease'                                  :[u'lease'],
+    'bail'                                   :[u'lease'],
+    'memorandum of understanding'            :[u'memorandum_of_understanding'],
+    'protocole d’entente'                    :[u'memorandum_of_understanding'],
+    'nondisclosure agreement'                :[u'nondisclosure_agreement'],
+    'accord de non divulgation'              :[u'nondisclosure_agreement'],
+    'service-level agreement'                :[u'service-level_agreement'],
+    'entente de niveau de service'           :[u'service-level_agreement'],
+    'affidavit'                              :[u'affidavit'],
+    'application'                            :[u'application'],
+    'demande'                                :[u'application'],
+    'api'                                    :[u'api'],
+    'architectural or technical design'      :[u'architectural_or_technical_design'],
+    'conception architecturale ou technique' :[u'architectural_or_technical_design'],
+    'article'                                :[u'article'],
+    'assessment'                             :[u'assessment'],
+    'évaluation'                             :[u'assessment'],
+    'audit'                                  :[u'audit'],
+    'environmental assessment'               :[u'environmental_assessment'],
+    'évaluation environnementale'            :[u'environmental_assessment'],
+    'examination'                            :[u'examination'],
+    'examen'                                 :[u'examination'],
+    'gap assessment'                         :[u'gap_assessment'],
+    'évaluation des écarts'                  :[u'gap_assessment'],
+    'lessons learned'                        :[u'lessons_learned'],
+    'leçons apprises'                        :[u'lessons_learned'],
+    'performance indicator'                  :[u'performance_indicator'],
+    'indicateur de rendement'                :[u'performance_indicator'],
+    'risk assessment'                        :[u'risk_assessment'],
+    'évaluation des risques'                 :[u'risk_assessment'],
+    'biography'                              :[u'biography'],
+    'biographie'                             :[u'biography'],
+    'briefing material'                      :[u'briefing_material'],
+    'matériel de breffage'                   :[u'briefing_material'],
+    'backgrounder'                           :[u'backgrounder'],
+    'précis d’information'                   :[u'backgrounder'],
+    'business case'                          :[u'business_case'],
+    'analyse de rentabilisation'             :[u'business_case'],
+    'claim'                                  :[u'claim'],
+    'réclamation'                            :[u'claim'],
+    'comments'                               :[u'comments'],
+    'commentaires'                           :[u'comments'],
+    'conference proceedings'                 :[u'conference_proceedings'],
+    'actes de la conférence'                 :[u'conference_proceedings'],
+    'consultation'                           :[u'consultation'],
+    'consultation'                           :[u'consultation'],
+    'contact information'                    :[u'contact_information'],
+    'coordonnées'                            :[u'contact_information'],
+    'correspondence'                         :[u'correspondence'],
+    'correspondance'                         :[u'correspondence'],
+    'ministerial correspondence'             :[u'ministerial_correspondence'],
+    'correspondance ministérielle'           :[u'ministerial_correspondence'],
+    'memorandum'                             :[u'memorandum'],
+    'note de service'                        :[u'memorandum'],
+    'dataset'                                :[u'dataset'],
+    'jeu de données'                         :[u'dataset'],
+    'delegation of authority'                :[u'delegation_of_authority'],
+    'délégation des pouvoirs'                :[u'delegation_of_authority'],
+    'educational material'                   :[u'educational_material'],
+    'matériel pédagogique'                   :[u'educational_material'],
+    'employment opportunity'                 :[u'employment_opportunity'],
+    'possibilité d’emploi'                   :[u'employment_opportunity'],
+    'event'                                  :[u'event'],
+    'événement'                              :[u'event'],
+    'fact sheet'                             :[u'fact_sheet'],
+    'feuille de renseignements'              :[u'fact_sheet'],
+    'financial material'                     :[u'financial_material'],
+    'document financier'                     :[u'financial_material'],
+    'budget'                                 :[u'budget'],
+    'funding proposal'                       :[u'funding_proposal'],
+    'proposition de financement'             :[u'funding_proposal'],
+    'invoice'                                :[u'invoice'],
+    'facture'                                :[u'invoice'],
+    'financial statement'                    :[u'financial_statement'],
+    'états financiers'                       :[u'financial_statement'],
+    'form'                                   :[u'form'],
+    'formulaire'                             :[u'form'],
+    'framework'                              :[u'framework'],
+    'cadre'                                  :[u'framework'],
+    'geospatial material'                    :[u'geospatial_material'],
+    'matériel géospatial'                    :[u'geospatial_material'],
+    'guide'                                  :[u'guide'],
+    'guide'                                  :[u'guide'],
+    'best practices'                         :[u'best_practices'],
+    'pratiques exemplaires'                  :[u'best_practices'],
+    'intellectual property statement'        :[u'intellectual_property_statement'],
+    'Énoncé sur la propriété intellectuelle' :[u'intellectual_property_statement'],
+    'legal complaint'                        :[u'legal_complaint'],
+    'plainte légale'                         :[u'legal_complaint'],
+    'legal opinion'                          :[u'legal_opinion'],
+    'avis juridique'                         :[u'legal_opinion'],
+    'legislation and regulations'            :[u'legislation_and_regulations'],
+    'lois et règlements'                     :[u'legislation_and_regulations'],
+    'licenses and permits'                   :[u'licenses_and_permits'],
+    'licences et permis'                     :[u'licenses_and_permits'],
+    'literary material'                      :[u'literary_material'],
+    'ouvrages littéraires'                   :[u'literary_material'],
+    'media release'                          :[u'media_release'],
+    'communiqué de presse'                   :[u'media_release'],
+    'statement'                              :[u'statement'],
+    'énoncé'                                 :[u'statement'],
+    'meeting material'                       :[u'meeting_material'],
+    'documentation de la réunion'            :[u'meeting_material'],
+    'agenda'                                 :[u'agenda'],
+    'programme'                              :[u'agenda'],
+    'minutes'                                :[u'minutes'],
+    'procès-verbaux'                         :[u'minutes'],
+    'memorandum to Cabinet'                  :[u'memorandum_to_cabinet'],
+    'mémoire au Cabinet'                     :[u'memorandum_to_cabinet'],
+    'multimedia resource'                    :[u'multimedia_resource'],
+    'ressource multimédia'                   :[u'multimedia_resource'],
+    'notice'                                 :[u'notice'],
+    'avis'                                   :[u'notice'],
+    'organizational description'             :[u'organizational_description'],
+    'description organisationnelle'          :[u'organizational_description'],
+    'plan'                                   :[u'plan'],
+    'business plan'                          :[u'business_plan'],
+    'plan d’activités'                       :[u'business_plan'],
+    'strategic plan'                         :[u'strategic_plan'],
+    'plan stratégique'                       :[u'strategic_plan'],
+    'policy'                                 :[u'policy'],
+    'politique'                              :[u'policy'],
+    'white paper'                            :[u'white_paper'],
+    'livre blanc'                            :[u'white_paper'],
+    'presentation'                           :[u'presentation'],
+    'présentation'                           :[u'presentation'],
+    'procedure'                              :[u'procedure'],
+    'procédure'                              :[u'procedure'],
+    'profile'                                :[u'profile'],
+    'profil'                                 :[u'profile'],
+    'project material'                       :[u'project_material'],
+    'documents du projet'                    :[u'project_material'],
+    'project charter'                        :[u'project_charter'],
+    'charte de projet'                       :[u'project_charter'],
+    'project plan'                           :[u'project_plan'],
+    'plan du projet'                         :[u'project_plan'],
+    'project proposal'                       :[u'project_proposal'],
+    'proposition de projet'                  :[u'project_proposal'],
+    'promotional material'                   :[u'promotional_material'],
+    'documents promotionnels'                :[u'promotional_material'],
+    'publication'                            :[u'publication'],
+    'Q & A'                                  :[u'faq'],
+    'FAQ'                                    :[u'faq'],
+    'Q et R'                                 :[u'faq'],
+    'foire aux questions'                    :[u'faq'],
+    'record of decision'                     :[u'record_of_decision'],
+    'compte rendu des décisions'             :[u'record_of_decision'],
+    'report'                                 :[u'report'],
+    'rapport'                                :[u'report'],
+    'annual report'                          :[u'annual_report'],
+    'rapport annuel'                         :[u'annual_report'],
+    'interim report'                         :[u'interim_report'],
+    'rapport d’étape'                        :[u'interim_report'],
+    'research proposal'                      :[u'research_proposal'],
+    'projet de recherche'                    :[u'research_proposal'],
+    'resource list'                          :[u'resource_list'],
+    'liste de référence'                     :[u'resource_list'],
+    'routing slip'                           :[u'routing_slip'],
+    'bordereau d’acheminement'               :[u'routing_slip'],
+    'Social media resource'                  :[u'blog_entry'],
+    'blog entry'                             :[u'blog_entry'],
+    'ressources des médias sociaux'          :[u'blog_entry'],
+    'entrée de blogue'                       :[u'blog_entry'],
+    'sound recording'                        :[u'sound_recording'],
+    'enregistrement sonore'                  :[u'sound_recording'],
+    'specification'                          :[u'specification'],
+    'spécification'                          :[u'specification'],
+    'statistics'                             :[u'statistics'],
+    'statistiques'                           :[u'statistics'],
+    'still image'                            :[u'still_image'],
+    'image fixe'                             :[u'still_image'],
+    'submission'                             :[u'submission'],
+    'présentation'                           :[u'submission'],
+    'survey'                                 :[u'survey'],
+    'sondage'                                :[u'survey'],
+    'terminology'                            :[u'terminology'],
+    'terminologie'                           :[u'terminology'],
+    'terms of reference'                     :[u'terms_of_reference'],
+    'mandat'                                 :[u'terms_of_reference'],
+    'tool'                                   :[u'tool'],
+    'outil'                                  :[u'tool'],
+    'training material'                      :[u'training_material'],
+    'matériel didactique'                    :[u'training_material'],
+    'transcript'                             :[u'transcript'],
+    'transcription'                          :[u'transcript'],
+    'web service'                            :[u'web_service'],
+    'service web'                            :[u'web_service'],
+    'website'                                :[u'website'],
+    'site Web'                               :[u'website'],
+    'workflow'                               :[u'workflow'],
+    'flux des travaux'                       :[u'workflow'],
+    
+    'abstract'                               :[u'abstract'],
+    'affidavit'                              :[u'affidavit'],
+    'agenda'                                 :[u'agenda'],
+    'agreement'                              :[u'agreement'],
+    'annual_report'                          :[u'annual_report'],
+    'api'                                    :[u'api'],
+    'application'                            :[u'application'],
+    'architectural_or_technical_design'      :[u'architectural_or_technical_design'],
+    'article'                                :[u'article'],
+    'assessment'                             :[u'assessment'],
+    'audit'                                  :[u'audit'],
+    'backgrounder'                           :[u'backgrounder'],
+    'best_practices'                         :[u'best_practices'],
+    'biography'                              :[u'biography'],
+    'blog_entry'                             :[u'blog_entry'],
+    'briefing_material'                      :[u'briefing_material'],
+    'budget'                                 :[u'budget'],
+    'business_case'                          :[u'business_case'],
+    'business_plan'                          :[u'business_plan'],
+    'claim'                                  :[u'claim'],
+    'comments'                               :[u'comments'],
+    'conference_proceedings'                 :[u'conference_proceedings'],
+    'consultation'                           :[u'consultation'],
+    'contact_information'                    :[u'contact_information'],
+    'contractual_material'                   :[u'contractual_material'],
+    'correspondence'                         :[u'correspondence'],
+    'dataset'                                :[u'dataset'],
+    'delegation_of_authority'                :[u'delegation_of_authority'],
+    'educational_material'                   :[u'educational_material'],
+    'employment_opportunity'                 :[u'employment_opportunity'],
+    'environmental_assessment'               :[u'environmental_assessment'],
+    'event'                                  :[u'event'],
+    'examination'                            :[u'examination'],
+    'fact_sheet'                             :[u'fact_sheet'],
+    'faq'                                    :[u'faq'],
+    'financial_material'                     :[u'financial_material'],
+    'financial_statement'                    :[u'financial_statement'],
+    'form'                                   :[u'form'],
+    'framework'                              :[u'framework'],
+    'funding_proposal'                       :[u'funding_proposal'],
+    'gap_assessment'                         :[u'gap_assessment'],
+    'geospatial_material'                    :[u'geospatial_material'],
+    'guide'                                  :[u'guide'],
+    'intellectual_property_statement'        :[u'intellectual_property_statement'],
+    'intergovernmental_agreement'            :[u'intergovernmental_agreement'],
+    'interim_report'                         :[u'interim_report'],
+    'invoice'                                :[u'invoice'],
+    'lease'                                  :[u'lease'],
+    'legal_complaint'                        :[u'legal_complaint'],
+    'legal_opinion'                          :[u'legal_opinion'],
+    'legislation_and_regulations'            :[u'legislation_and_regulations'],
+    'lessons_learned'                        :[u'lessons_learned'],
+    'licenses_and_permits'                   :[u'licenses_and_permits'],
+    'literary_material'                      :[u'literary_material'],
+    'media_release'                          :[u'media_release'],
+    'meeting_material'                       :[u'meeting_material'],
+    'memorandum'                             :[u'memorandum'],
+    'memorandum_of_understanding'            :[u'memorandum_of_understanding'],
+    'memorandum_to_cabinet'                  :[u'memorandum_to_cabinet'],
+    'ministerial_correspondence'             :[u'ministerial_correspondence'],
+    'minutes'                                :[u'minutes'],
+    'multimedia_resource'                    :[u'multimedia_resource'],
+    'nondisclosure_agreement'                :[u'nondisclosure_agreement'],
+    'notice'                                 :[u'notice'],
+    'organizational_description'             :[u'organizational_description'],
+    'performance_indicator'                  :[u'performance_indicator'],
+    'plan'                                   :[u'plan'],
+    'policy'                                 :[u'policy'],
+    'presentation'                           :[u'presentation'],
+    'procedure'                              :[u'procedure'],
+    'profile'                                :[u'profile'],
+    'project_charter'                        :[u'project_charter'],
+    'project_material'                       :[u'project_material'],
+    'project_plan'                           :[u'project_plan'],
+    'project_proposal'                       :[u'project_proposal'],
+    'promotional_material'                   :[u'promotional_material'],
+    'publication'                            :[u'publication'],
+    'record_of_decision'                     :[u'record_of_decision'],
+    'report'                                 :[u'report'],
+    'research_proposal'                      :[u'research_proposal'],
+    'resource_list'                          :[u'resource_list'],
+    'risk_assessment'                        :[u'risk_assessment'],
+    'routing_slip'                           :[u'routing_slip'],
+    'service-level_agreement'                :[u'service-level_agreement'],
+    'sound_recording'                        :[u'sound_recording'],
+    'specification'                          :[u'specification'],
+    'statement'                              :[u'statement'],
+    'statistics'                             :[u'statistics'],
+    'still_image'                            :[u'still_image'],
+    'strategic_plan'                         :[u'strategic_plan'],
+    'submission'                             :[u'submission'],
+    'survey'                                 :[u'survey'],
+    'terminology'                            :[u'terminology'],
+    'terms_of_reference'                     :[u'terms_of_reference'],
+    'tool'                                   :[u'tool'],
+    'training_material'                      :[u'training_material'],
+    'transcript'                             :[u'transcript'],
+    'web_service'                            :[u'web_service'],
+    'website'                                :[u'website'],
+    'white_paper'                            :[u'white_paper'],
+    'workflow'                               :[u'workflow'],
+
+}
+
+
+#old_ResourceType = [
+#    'abstract',
+#    'affidavit',
+#    'agenda',
+#    'agreement',
+#    'annual_report',
+#    'application',
+#    'architectural_or_technical_design',
+#    'article',
+#    'assessment',
+#    'audit',
+#    'backgrounder',
+#    'best_practices',
+#    'biography',
+#    'blog_entry',
+#    'briefing_material',
+#    'budget',
+#    'business_case',
+#    'business_plan',
+#    'claim',
+#    'comments',
+#    'conference_proceedings',
+#    'consultation',
+#    'contact_information',
+#    'contractual_material',
+#    'correspondence',
+#    'dataset',
+#    'delegation_of_authority',
+#    'educational_material',
+#    'employment_opportunity',
+#    'environmental_assessment',
+#    'event',
+#    'examination',
+#    'fact_sheet',
+#    'faq',
+#    'financial_material',
+#    'financial_statement',
+#    'form',
+#    'framework',
+#    'funding_proposal',
+#    'gap_assessment',
+#    'geospatial_material',
+#    'guide',
+#    'intellectual_property_statement',
+#    'intergovernmental_agreement',
+#    'interim_report',
+#    'invoice',
+#    'lease',
+#    'legal_complaint',
+#    'legal_opinion',
+#    'legislation_and_regulations',
+#    'lessons_learned',
+#    'licenses_and_permits',
+#    'literary_material',
+#    'media_release',
+#    'meeting_material',
+#    'memorandum',
+#    'memorandum_of_understanding',
+#    'memorandum_to_cabinet',
+#    'ministerial_correspondence',
+#    'minutes',
+#    'multimedia_resource',
+#    'nondisclosure_agreement',
+#    'notice',
+#    'organizational_description',
+#    'performance_indicator',
+#    'plan',
+#    'policy',
+#    'presentation',
+#    'procedure',
+#    'profile',
+#    'project_charter',
+#    'project_material',
+#    'project_plan',
+#    'project_proposal',
+#    'promotional_material',
+#    'publication',
+#    'record_of_decision',
+#    'report',
+#    'research_proposal',
+#    'resource_list',
+#    'risk_assessment',
+#    'routing_slip',
+#    'service-level_agreement',
+#    'sound_recording',
+#    'specification',
+#    'statement',
+#    'statistics',
+#    'still_image',
+#    'strategic_plan',
+#    'submission',
+#    'survey',
+#    'terminology',
+#    'terms_of_reference',
+#    'tool',
+#    'training_material',
+#    'transcript',
+#    'website',
+#    'white_paper',
+#    'workflow',
+#    'web_service'
 #]
-
-
-ResourceType = [
-    'abstract',
-    'affidavit',
-    'agenda',
-    'agreement',
-    'annual_report',
-    'application',
-    'architectural_or_technical_design',
-    'article',
-    'assessment',
-    'audit',
-    'backgrounder',
-    'best_practices',
-    'biography',
-    'blog_entry',
-    'briefing_material',
-    'budget',
-    'business_case',
-    'business_plan',
-    'claim',
-    'comments',
-    'conference_proceedings',
-    'consultation',
-    'contact_information',
-    'contractual_material',
-    'correspondence',
-    'dataset',
-    'delegation_of_authority',
-    'educational_material',
-    'employment_opportunity',
-    'environmental_assessment',
-    'event',
-    'examination',
-    'fact_sheet',
-    'faq',
-    'financial_material',
-    'financial_statement',
-    'form',
-    'framework',
-    'funding_proposal',
-    'gap_assessment',
-    'geospatial_material',
-    'guide',
-    'intellectual_property_statement',
-    'intergovernmental_agreement',
-    'interim_report',
-    'invoice',
-    'lease',
-    'legal_complaint',
-    'legal_opinion',
-    'legislation_and_regulations',
-    'lessons_learned',
-    'licenses_and_permits',
-    'literary_material',
-    'media_release',
-    'meeting_material',
-    'memorandum',
-    'memorandum_of_understanding',
-    'memorandum_to_cabinet',
-    'ministerial_correspondence',
-    'minutes',
-    'multimedia_resource',
-    'nondisclosure_agreement',
-    'notice',
-    'organizational_description',
-    'performance_indicator',
-    'plan',
-    'policy',
-    'presentation',
-    'procedure',
-    'profile',
-    'project_charter',
-    'project_material',
-    'project_plan',
-    'project_proposal',
-    'promotional_material',
-    'publication',
-    'record_of_decision',
-    'report',
-    'research_proposal',
-    'resource_list',
-    'risk_assessment',
-    'routing_slip',
-    'service-level_agreement',
-    'sound_recording',
-    'specification',
-    'statement',
-    'statistics',
-    'still_image',
-    'strategic_plan',
-    'submission',
-    'survey',
-    'terminology',
-    'terms_of_reference',
-    'tool',
-    'training_material',
-    'transcript',
-    'website',
-    'white_paper',
-    'workflow',
-    'web_service'
-]
 
 CL_Formats = [
     'AAC',
