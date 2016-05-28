@@ -1500,6 +1500,7 @@ def sanityFirst(values):
 # Project specific data manipulation
 # maskDate(date)
 
+
 def maskDate(date):
     # default_date =\
     if len(date) >= 10:
@@ -1513,6 +1514,7 @@ def maskDate(date):
 # fetchXMLAttribute(objectToXpath, xpath, attribute)
 # fetchCLValue(SRCH_key, CL_array)
 
+
 # Fetch an array which may be subsections
 def fetchXMLArray(objectToXpath, xpath):
     return objectToXpath.xpath(xpath, namespaces={
@@ -1520,6 +1522,8 @@ def fetchXMLArray(objectToXpath, xpath):
         'gco': 'http://www.isotc211.org/2005/gco',
         'gml': 'http://www.opengis.net/gml/3.2',
         'csw': 'http://www.opengis.net/cat/csw/2.0.2'})
+
+
 # Extract values from your current position
 def fetchXMLValues(objectToXpath, xpath):
     values = []
@@ -1531,6 +1535,8 @@ def fetchXMLValues(objectToXpath, xpath):
             else:
                 values.append(namePart.text.strip())
     return values
+
+
 # Fetch an attribute instead of a an element
 def fetchXMLAttribute(objectToXpath, xpath, attribute):
     # Easy to miss this, clean and combine
@@ -1545,6 +1551,8 @@ def fetchXMLAttribute(objectToXpath, xpath, attribute):
         'gco': 'http://www.isotc211.org/2005/gco',
         'gml': 'http://www.opengis.net/gml/3.2',
         'csw': 'http://www.opengis.net/cat/csw/2.0.2'})
+
+
 # Fetch the value of a controled list ( at the bottom )
 def fetchCLValue(SRCH_key, CL_array):
     p = re.compile(' ')
@@ -1557,6 +1565,8 @@ def fetchCLValue(SRCH_key, CL_array):
         if SRCH_key == CL_key:
             return value
     return None
+
+
 # Schema aware fetch for generic items
 def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
     if schema_ref['Value Type'] == 'value':
@@ -1570,7 +1580,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             "codeListValue")
     else:
         reportError(
-            HNAP_fileIdentifier,[
+            HNAP_fileIdentifier, [
                 schema_ref['CKAN API property'],
                 'FETCH on undefined Value Type',
                 schema_ref['CKAN API property']+':'+schema_ref['Value Type']
@@ -1579,7 +1589,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
 
     if schema_ref['Requirement'] == 'M':
         if not sanityMandatory(
-            HNAP_fileIdentifier,[
+            HNAP_fileIdentifier, [
                 schema_ref['CKAN API property']
             ],
             tmp
@@ -1587,7 +1597,7 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             return False
     if schema_ref['Occurrences'] == 'S':
         if not sanitySingle(
-            HNAP_fileIdentifier,[
+            HNAP_fileIdentifier, [
                 schema_ref['CKAN API property']
             ],
             tmp
@@ -1781,7 +1791,6 @@ napMD_MaintenanceFrequencyCode = {
 #    'RI_405'    : [u'diagramDigital',            u'diagrammeNumérique'],
 #    'RI_406'    : [u'diagramHardcopy',            u'diagrammePapier']
 # }
-
 
 napMD_KeywordTypeCode = {
     'farming'                                : [u'farming',                              u'Farming',                                  u'Agriculture'],
