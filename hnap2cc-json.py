@@ -1756,24 +1756,6 @@ napMD_MaintenanceFrequencyCode = {
     'RI_544'    :[u'semimonthly',              u'bimensuel',        u'P2M'],
 }
 
-
-# This metadata has to match CKAN required values
-#napMD_MaintenanceFrequencyCode = {
-#    'RI_532'    : [u'continual'],
-#    'RI_533'    : [u'daily'],
-#    'RI_534'    : [u'weekly'],
-#    'RI_535'    : [u'fortnightly'],
-#    'RI_536'    : [u'monthly'],
-#    'RI_537'    : [u'quarterly'],
-#    'RI_538'    : [u'biannually'],
-#    'RI_539'    : [u'annually'],
-#    'RI_540'    : [u'as_needed'],
-#    'RI_541'    : [u'irregular'],
-#    'RI_542'    : [u'not_planned'],
-#    'RI_543'    : [u'unknown'],
-#    'RI_544'    : [u'semimonthly'],
-#}
-
 # # In the mapping doc but not used
 # presentationForm
 # IC_89    http://nap.geogratis.gc.ca/metadata/register/registerItemClasses-eng.html#IC_89
