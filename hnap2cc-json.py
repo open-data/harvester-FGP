@@ -17,6 +17,11 @@ import time
 import re
 import codecs
 
+import unicodedata
+
+MIN_TAG_LENGTH = 2
+MAX_TAG_LENGTH = 140
+
 ##################################################
 # TL err/dbg
 error_output = []
@@ -593,16 +598,33 @@ def main():
                     p = re.compile('^[A-Z][A-Z] [^>]+ > ')
                     single_value = p.sub('', single_value)
                     single_value = single_value.strip()
-                    if len(single_value) >= 2:
-                        if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                            reportError(
-                                HNAP_fileIdentifier,[
-                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
-                                    "Invalid character in Keyword",
-                                    "Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
-                                ])
-                        if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
-                            json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
+# ADAPTATION #4
+# 2016-05-27 - call
+# Alexandre Bolieux asked I replace commas with something valid.  I'm replacing them with semi-colons
+# which can act as a seperator character like the comma but get past that reserved character
+                    single_value = single_value.replace(',', ';')
+# END ADAPTATION
+                    keyword_error = canada_tags(single_value).replace('"', '""')
+
+# ADAPTATION #4
+# 2016-05-27 - call
+# Alexandre Bolieux asked if I could replace commas with something valid.  I'm
+# replacing them with semi-colons which can act as a seperator character like
+# the comma but get past that reserved character
+                    if re.search('length is more than maximum 140', keyword_error, re.UNICODE):
+                        pass
+# END ADAPTATION
+                    elif not keyword_error == '':
+                    #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["34"]['CKAN API property']+'-'+CKAN_primary_lang,
+                                "Invalid Keyword",
+                                keyword_error
+                                #"Must be alpha-numeric, space or '-_./>+& ["+single_value+']'
+                            ])
+                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]:
+                        json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang].append(single_value)
                 if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_primary_lang]):
                     reportError(
                         HNAP_fileIdentifier,[
@@ -619,16 +641,31 @@ def main():
                 for single_value in value:
                     p = re.compile('^[A-Z][A-Z] [^>]+ > ')
                     single_value = p.sub('', single_value)
-                    if len(single_value) >= 2:
-                        if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
-                            reportError(
-                                HNAP_fileIdentifier,[
-                                    schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
-                                    "Invalid character in Keyword",
-                                    'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
-                                ])
-                        if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
-                            json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
+# ADAPTATION #4
+# 2016-05-27 - call
+# Alexandre Bolieux asked if I could replace commas with something valid.  I'm
+# replacing them with semi-colons which can act as a seperator character like
+# the comma but get past that reserved character
+                    single_value = single_value.replace(',', ';')
+# END ADAPTATION
+                    keyword_error = canada_tags(single_value).replace('"', '""')
+# ADAPTATION #5
+# 2016-05-27 - call
+# Alexandre Bolieux asked I drop keywords that exceed 140 characters
+                    if re.search('length is more than maximum 140', keyword_error, re.UNICODE):
+                        pass
+# END ADAPTATION
+                    elif not keyword_error == '':                      
+                    #if not re.search(schema_ref["34"]['RegEx Filter'], single_value,re.UNICODE):
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["34"]['CKAN API property']+'-'+CKAN_secondary_lang,
+                                "Invalid Keyword",
+                                keyword_error
+                                #'Must be alpha-numeric, space or -_./>+& ['+single_value+']'
+                            ])
+                    if single_value not in json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]:
+                        json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang].append(single_value)
                 if not len(json_record[schema_ref["34"]['CKAN API property']][CKAN_secondary_lang]):
                     reportError(
                         HNAP_fileIdentifier,[
@@ -1293,6 +1330,8 @@ def main():
                             'invalid resource type',
                             json_record_resource[schema_ref["69"]['CKAN API property']]
                         ])
+                else:
+                    json_record_resource[schema_ref["69"]['CKAN API property']] = ResourceType[json_record_resource[schema_ref["69"]['CKAN API property']].lower()][0]
 
                 if json_record_resource[schema_ref["70"]['CKAN API property']] not in CL_Formats:
                     reportError(
@@ -1558,6 +1597,50 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
             return sanityFirst(tmp)
 
     return tmp
+
+##################################################
+# External validators
+# canada_tags(value)
+
+# Unceremoniously appropriated/repurposed from Ian Ward's change to CKAN and
+# clubbed into a shape I can use here.
+# https://github.com/open-data/ckanext-canada/commit/711236e39922d167991dc56a06e53f8328b11c4c
+# I should pull these tests in from CKAN but we don't have time to do the smart
+# thing quite yet.  Eventually I'll collect these errors from my attempt to
+# upload them to CKAN to keep up to date.  This happens when we generate system
+# level documentation to match.
+def canada_tags(value):
+    """
+    Accept
+    - unicode graphical (printable) characters
+    - single internal spaces (no double-spaces)
+
+    Reject
+    - commas
+    - tags that are too short or too long
+
+    Strip
+    - spaces at beginning and end
+    """
+    value = value.strip()
+    if len(value) < MIN_TAG_LENGTH:
+        return  u'Tag "%s" length is less than minimum %s' % (value, MIN_TAG_LENGTH)
+    if len(value) > MAX_TAG_LENGTH:
+        return u'Tag "%s" length is more than maximum %i'  % (value, MAX_TAG_LENGTH)
+    if u',' in value:
+        return u'Tag "%s" may not contain commas' % (value)
+    if u'  ' in value:
+        return u'Tag "%s" may not contain consecutive spaces' % (value)
+
+    caution = re.sub(ur'[\w ]*', u'', value)
+    for ch in caution:
+        category = unicodedata.category(ch)
+        if category.startswith('C'):
+            return u'Tag "%s" may not contain unprintable character U+%04x' % (value, ord(ch))
+        if category.startswith('Z'):
+            return u'Tag "%s" may not contain separator charater U+%04x' % (value, ord(ch))
+
+    return ''
 
 ##################################################
 # FGP specific Controled lists
