@@ -1,5 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Usage: 
+    cat hnap.xml | harvest.py [-e Error file to generate]
+    harvest.py [-e Error file to generate] hnap.xml
+
+Convert HNAP XML from FGP platform to OGP Portal input
+
+Accepts streamed HNAP xml input or a supplied HNAP xml filename
+
+Options:
+    -e Error file to generate
+"""
 
 ##################################################
 # Schema import
@@ -19,6 +30,8 @@ import codecs
 
 import unicodedata
 
+import docopt
+
 MIN_TAG_LENGTH = 2
 MAX_TAG_LENGTH = 140
 
@@ -34,8 +47,6 @@ error_records = {}
 # input_file     = 'data/majechr_source.xml'
 # input_file     = 'data/hnap_import.xml'
 input_file = None
-output_jl = "harvested_records.jl"
-output_err = "harvested_record_errors.csv"
 
 # Use stdin if it's populated
 if not sys.stdin.isatty():
@@ -115,6 +126,13 @@ iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
 
 
 def main():
+    output_jl = "harvested_records.jl"
+    output_err = "harvested_record_errors.csv"
+
+    # Is there a specified start date
+    if arguments['-e']:
+        output_err = arguments['-e']
+
     json_records = []
     for input_block in input_data_blocks:
 
@@ -2754,4 +2772,5 @@ OGP_catalogueType = {
 }
 
 if __name__ == "__main__":
+    arguments = docopt.docopt(__doc__)
     sys.exit(main())
