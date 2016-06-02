@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Usage: 
-    cat hnap.xml | harvest.py [-e Error file to generate]
-    harvest.py [-e Error file to generate] hnap.xml
+"""Usage: hnap2cc-json.py [-e Error file to generate]
 
 Convert HNAP XML from FGP platform to OGP Portal input
 
 Accepts streamed HNAP xml input or a supplied HNAP xml filename
+
+    cat hnap.xml | hnap2cc-json.py [-e Error file to generate]
+    hnap2cc-json.py [-e Error file to generate] hnap.xml
 
 Options:
     -e Error file to generate
