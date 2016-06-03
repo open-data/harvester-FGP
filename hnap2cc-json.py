@@ -387,7 +387,8 @@ def main():
                     reportError(
                         HNAP_fileIdentifier,[
                             schema_ref["16"]['CKAN API property'],
-                            '"No valid orgs found","'+org_string.strip()+'"'
+                            "No valid orgs found",
+                            org_string.strip()
                         ])
                 else:
                     json_record[schema_ref["16"]['CKAN API property']] = valid_orgs[0]
