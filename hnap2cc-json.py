@@ -1421,6 +1421,7 @@ def main():
                 json_record['imso_approval'] = 'true'
                 json_record['ready_to_publish'] = 'true'
                 json_record['state'] = 'active'
+                json_record['restrictions'] = 'unrestricted'
                 #if error don't do this 
                 json_records.append(json_record)
 ##################################################
