@@ -1422,6 +1422,7 @@ def main():
                 json_record['ready_to_publish'] = 'true'
                 json_record['state'] = 'active'
                 #if error don't do this 
+                json_record['restrictions'] = 'unrestricted'
                 json_records.append(json_record)
 ##################################################
 ##################################################
