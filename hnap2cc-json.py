@@ -1409,6 +1409,21 @@ def main():
 # CC::OpenMaps-80 Record URL
 # TBS 2016-04-13: Not in HNAP, we can skip
 
+# CC::OpenMaps-81 Mappable
+                if schema_ref["81"]['CKAN API property'] not in json_record:
+                    can_be_used_in_RAMP = "false"
+                    json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+
+                # If false check if true now
+                if can_be_used_in_RAMP == "false":
+                    if json_record_resource[schema_ref["70"]['CKAN API property']] == "ESRI REST":
+                        can_be_used_in_RAMP = "true"
+                    if json_record_resource[schema_ref["70"]['CKAN API property']] == "WMS":
+                        can_be_used_in_RAMP = "true"
+
+                if can_be_used_in_RAMP == "true":
+                    json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+
                 # Append the resource to the Open Maps record
                 json_record['resources'].append(json_record_resource)
 
