@@ -1378,6 +1378,13 @@ def main():
                 value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["74"])
                 if value:
                     json_record_resource[schema_ref["74"]['CKAN API property']] = value
+                else:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["74"]['CKAN API property'],
+                            'URL, mandatory field missing'
+                        ])
+
 
 # CC::OpenMaps-75 Title (English)
 # XXX Need to confirm why this is not included
