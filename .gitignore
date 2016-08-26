@@ -59,3 +59,5 @@ harvester.ini
 sample data
 *.jl
 *.err
+harvested_record_errors.csv
+docs/Data Migration for CKAN Update-v.4.doc
