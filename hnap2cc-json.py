@@ -145,6 +145,9 @@ def main():
         for record in records:
             json_record = {}
 
+            can_be_used_in_RAMP = False
+            json_record['display_flags'] = []
+
 ##################################################
 # HNAP CORE LANGUAGE
 ##################################################
@@ -1410,24 +1413,29 @@ def main():
 # TBS 2016-04-13: Not in HNAP, we can skip
 
 # CC::OpenMaps-81 Mappable
-                if schema_ref["81"]['CKAN API property'] not in json_record:
-                    can_be_used_in_RAMP = "false"
-                    json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+# Stored as a generic Display Flag in preperation for other forms of visualizations
+
+                #if schema_ref["81"]['CKAN API property'] not in json_record:
+                #    can_be_used_in_RAMP = False
+                #    json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
 
                 # If false check if true now
-                if can_be_used_in_RAMP == "false":
+                if not can_be_used_in_RAMP:
                     if json_record_resource[schema_ref["70"]['CKAN API property']] == "ESRI REST":
-                        can_be_used_in_RAMP = "true"
+                        can_be_used_in_RAMP = True
                     if json_record_resource[schema_ref["70"]['CKAN API property']] == "WMS":
-                        can_be_used_in_RAMP = "true"
+                        can_be_used_in_RAMP = True
 
-                if can_be_used_in_RAMP == "true":
-                    json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+                #if can_be_used_in_RAMP == "true":
+                    #json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
 
                 # Append the resource to the Open Maps record
                 json_record['resources'].append(json_record_resource)
 
-            json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+            #json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+            if can_be_used_in_RAMP:
+                json_record['display_flags'].append('fgp_viewer')
+
 
             ##################################################
             #                                                #
