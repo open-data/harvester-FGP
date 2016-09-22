@@ -425,7 +425,7 @@ def main():
 
             value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["21"])
             if value:
-                json_record[schema_ref["21"]['CKAN API property']] = value
+                json_record[schema_ref["21"]['CKAN API property']] = ','.join(value)
 
 # CC::OpenMaps-22 Contributor (English)
 #       Intentionally left blank, assuming singular contribution
