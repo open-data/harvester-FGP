@@ -1307,7 +1307,7 @@ def main():
                                 languages_out.append('fr')
                             if language.strip() == 'zxx': # Non linguistic
                                 languages_out.append('zxx')
-                        language_str = languages_out[0]
+                        language_str = ','.join(languages_out)
 
                         json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
                         json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
