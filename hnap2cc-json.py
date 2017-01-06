@@ -882,6 +882,23 @@ def main():
                                 json_record[schema_ref["47"]['CKAN API property']] = maskDate(inVal)
                                 break
 
+                # Check the field is populated if you have to
+                if schema_ref["46"]['Requirement'] == 'M' and schema_ref["46"]['CKAN API property'] not in json_record:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["46"]['CKAN API property'],
+                            'Value not found in '+schema_ref["46"]['Reference']
+                        ])
+
+                # Check the field is populated if you have to
+                if schema_ref["47"]['Requirement'] == 'M' and schema_ref["47"]['CKAN API property'] not in json_record:
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["47"]['CKAN API property'],
+                            'Value not found in '+schema_ref["47"]['Reference']
+                        ])
+
+
             if 'date_published' not in json_record:
                 reportError(
                     HNAP_fileIdentifier,[
