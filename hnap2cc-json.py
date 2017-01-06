@@ -855,10 +855,10 @@ def main():
                     # Decypher which side has the code and which has the data,
                     # yea... it changes -sigh-
                     # Keys will always use the ;
-                    if len(cn[0][0].text.split(';')) > 1:
+                    if cn[0][0].text is not None and len(cn[0][0].text.split(';')) > 1:
                         inKey = cn[0][0].text.split(';')
                         inVal = cn[1][0].text.strip()
-                    else:
+                    elif cn[1][0].text is not None:
                         inKey = cn[1][0].text.split(';')
                         inVal = cn[0][0].text.strip()
 
