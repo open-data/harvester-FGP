@@ -123,6 +123,19 @@ source_hnap = ("csw.open.canada.ca/geonetwork/srv/"
                "&outputSchema=csw:IsoRecord"
                "&id=")
 
+mappable_protocols = [
+    "OGC:WMS",
+    "ESRI REST: Map Service",
+    "ESRI REST: Feature Service",
+    "ESRI REST: Image Service",
+    "ESRI REST: Tiled Map Service",
+    "WMS de l'OGC",
+    "REST de L'ESRI : Service de cartes",
+    "REST de L'ESRI : Service d’entités géographiques",
+    "REST de L'ESRI : Service d’imagerie",
+    "REST de L'ESRI : Service de pavés cartographiques"
+]
+
 iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
 
 
@@ -1438,13 +1451,11 @@ def main():
 
                 # If false check if true now
                 if not can_be_used_in_RAMP:
-                    if json_record_resource[schema_ref["70"]['CKAN API property']] == "ESRI REST":
-                        can_be_used_in_RAMP = True
-                    if json_record_resource[schema_ref["70"]['CKAN API property']] == "WMS":
-                        can_be_used_in_RAMP = True
-
-                #if can_be_used_in_RAMP == "true":
-                    #json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+                    value = fetch_FGP_value(resource, HNAP_fileIdentifier, schema_ref["81"])
+                    if value:
+                        protocol_desc = value.strip()
+                        if protocol_desc in mappable_protocols:
+                            can_be_used_in_RAMP = True
 
                 # Append the resource to the Open Maps record
                 json_record['resources'].append(json_record_resource)
