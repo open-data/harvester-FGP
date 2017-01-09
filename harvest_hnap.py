@@ -48,6 +48,7 @@ def main():
     proxy_url = None
     proxy_user = None
     proxy_passwd = None
+    records_per_request = 10
 
     # Or read from a .ini file
     harvester_file = 'config/harvester.ini'
@@ -60,25 +61,35 @@ def main():
 
         csw_url = ini_config.get(
             'csw', 'url')
+
+        # Get configuration options
         if ini_config.has_option('csw', 'username'):
             csw_user = ini_config.get(
                 'csw', 'username')
+
             csw_passwd = ini_config.get(
                 'csw', 'password')
 
-        proxy_protocol = ini_config.get(
-            'proxy', 'protocol')
-        proxy_url = ini_config.get(
-            'proxy', 'url')
+        if ini_config.has_option('proxy', 'protocol'):
+            proxy_protocol = ini_config.get(
+                'proxy', 'protocol')
+
+        if ini_config.has_option('proxy', 'url'):
+            proxy_url = ini_config.get(
+                'proxy', 'url')
+
         if ini_config.has_option('proxy', 'username'):
             proxy_user = ini_config.get(
                 'proxy', 'username')
             proxy_passwd = ini_config.get(
                 'proxy', 'password')
 
-        records_per_request = int(ini_config.get(
-            'processing', 'records_per_request'))
-        start_date = ini_config.get('processing', 'start_date')
+        if ini_config.has_option('processing', 'records_per_request'):
+            records_per_request = int(ini_config.get(
+                'processing', 'records_per_request'))
+
+        if ini_config.has_option('processing', 'start_date'):
+            start_date = ini_config.get('processing', 'start_date')
 
     # If your supplying a proxy
     if proxy_url:
