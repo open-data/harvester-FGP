@@ -154,7 +154,9 @@ def main():
     active_page = 0
     next_record = 1
     request_another = True
+
     while request_another:
+
         request_another = False
 
         # Filter records into latest updates
