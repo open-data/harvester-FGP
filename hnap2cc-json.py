@@ -1533,7 +1533,8 @@ def main():
     
     # Write errors to logs
     output = codecs.open(output_err, 'w', 'utf-8')
-    output.write('"id","field","description","value"'+u"\n")
+    if len(error_output) > 0:
+        output.write('"id","field","description","value"'+u"\n")
     for error in error_output:
         #output.write(unicode(error+"\n", 'utf-8'))
         output.write(error+u"\n")

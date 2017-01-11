@@ -18,7 +18,7 @@ if len(sys.argv) < 3:
     exit(1)
 
 if sys.argv[1] == "-f" and len(sys.argv[2]) > 0:
-    
+
     # Open the CSV file for reading
     reader = csv.reader(open(sys.argv[2]))
 
@@ -26,44 +26,51 @@ if sys.argv[1] == "-f" and len(sys.argv[2]) > 0:
     with open("harvested_record_errors.html", 'w+') as f:
 
         rownum = 0
-        numrecords = sum(1 for row in reader)
+        html = ''
 
         # Generate html
         f.write('<html><head><title>FGP Harvester Errors</title></head><body><h1>FGP Harvester Errors</h1><h4>Created: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '</h4>')
 
         # Generate table contents
         # - assuming first row in csv contains column names
-        if numrecords == 1:
-            f.write('<p>No errors found!</p>')
+        # if numrecords < 2:
+        #     f.write('<p>No errors found!</p>')
 
+        # else:
+
+        html += '<table border="1" cellspacing="0" cellpadding="5" frame="box" rules="all">'
+        for row in reader:
+
+            # write header row. assumes first row in csv contains column names
+            if rownum == 0:
+                html += '<tr>'
+                html += '<th>&nbsp;</th>'
+                for column in row:
+                    html += '<th>' + column + '</th>'
+                html += '</tr>'
+
+            # write all other rows
+            else:
+                html += '<tr>'
+                html += '<td>' + str(rownum) + '.</td>'
+                colnum = 0
+                for column in row:
+                    if colnum < 2:
+                        html += '<td nowrap>' + column + '</td>'
+                    else:
+                        html += '<td>' + column + '</td>'
+                    colnum += 1
+                html += '</tr>'
+
+            rownum += 1
+
+        html += '</table>'
+
+        # Write out the table html if there are rows
+        if rownum > 0:
+            f.write(html)
         else:
-            f.write('<table border="1" cellspacing="0" cellpadding="5" frame="box" rules="all">')
-            for row in reader:
-
-                # write header row. assumes first row in csv contains column names
-                if rownum == 0:
-                    f.write('<tr>')
-                    f.write('<th>&nbsp;</th>')
-                    for column in row:
-                        f.write('<th>' + column + '</th>')
-                    f.write('</tr>')
-
-                # write all other rows
-                else:
-                    f.write('<tr>')
-                    f.write('<td>' + str(rownum) + '.</td>')
-                    colnum = 0
-                    for column in row:
-                        if colnum < 2:
-                            f.write('<td nowrap>' + column + '</td>')
-                        else:
-                            f.write('<td>' + column + '</td>')
-                        colnum += 1
-                    f.write('</tr>')
-
-                rownum += 1
-
-            f.write('</table>')
+            f.write('<p>No errors found!</p>')
 
         f.write('</body></html>')
 
