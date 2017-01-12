@@ -39,8 +39,22 @@ echo $OGS_HARVEST_LAST_RUN
 
 # Collect the latest data
 # /home/odatsrv/_harvester_OpenMaps/harvest_hnap.py -f $OGS_HARVEST_LAST_RUN > harvested_records.xml
-./harvest_hnap.py -f $OGS_HARVEST_LAST_RUN > harvested_records.xml
+./harvest_hnap.py -f $OGS_HARVEST_LAST_RUN > harvested_records.xml & pid=$!
+
+# show progress
+spin='-\|/'
+i=0
+while kill -0 $pid 2>/dev/null
+do
+  i=$(( (i+1) %4 ))
+  printf "\r${spin:$i:1}"
+  sleep .1
+done
+printf "\r"
+# create the common core JSON file
 /bin/cat harvested_records.xml | ./hnap2cc-json.py
+# convert csv errors to html
+./csv2html.py -f harvested_record_errors.csv
 
 # myfilesize=`stat -c %s harvested_records.jl` # for Linux
 myfilesize=`stat -f %z harvested_records.jl` # for OSX
@@ -48,7 +62,7 @@ myfilesize=`stat -f %z harvested_records.jl` # for OSX
 if [ $myfilesize = 0 ]; then
     echo "No records, skipping load into CKAN"
 else
-    echo "Has records, loading into CKAN"
+    echo "Has records, loading into CKAN..."
     # cd /var/www/html/open_gov/staging-portal/ckan
     # ckanapi load datasets -I ~/_harvester_OpenMaps/harvested_records.jl -c production.ini
 fi
