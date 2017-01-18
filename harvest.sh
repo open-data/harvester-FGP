@@ -65,6 +65,7 @@ else
     echo "Has records, loading into CKAN..."
     # cd /var/www/html/open_gov/staging-portal/ckan
     # ckanapi load datasets -I ~/_harvester_OpenMaps/harvested_records.jl -c production.ini
+    # ckanapi load datasets -I harvested_records.jl -r http://staging.open.canada.ca/data -a SOME_API_KEY
 fi
 
 rm run.lock

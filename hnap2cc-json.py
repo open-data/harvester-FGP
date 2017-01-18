@@ -1681,6 +1681,19 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
         tmp = fetchXMLValues(
             record,
             schema_ref["FGP XPATH"])
+
+        # HACK
+        # HNAP supports multiple projections, Common Core does not. 
+        # Take the first projection offered by the catalogue for now.
+
+        # TODO
+        #  Edit CKAN Common Core schema so that:
+        #       a. 56b & 56c are not mandatory
+        #       b. 56a, 56b, & 56c can have multiple values
+        if "56a" in schema_ref['Property ID'] or "56b" in schema_ref['Property ID'] or "56c" in schema_ref['Property ID']:
+            if len(tmp) > 1:
+                tmp = [tmp[0]]
+
     elif schema_ref['Value Type'] == 'attribute':
         tmp = fetchXMLAttribute(
             record,
