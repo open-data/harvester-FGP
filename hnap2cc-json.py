@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Usage: hnap2cc-json.py [-e Error file to generate]
 
-Convert HNAP XML from FGP platform to OGP Portal input
+Convert HNAP 2.3.1 XML from FGP platform CSW v1.6.2 to OGP Portal input
 
 Accepts streamed HNAP xml input or a supplied HNAP xml filename
 
@@ -1343,6 +1343,15 @@ def main():
                             if language.strip() == 'zxx': # Non linguistic
                                 languages_out.append('zxx')
                         language_str = ','.join(languages_out)
+
+                        # HACK check against schema for bilingual language_str
+                        if schema_ref["73"]['Occurrences'] == 'S':
+                            sanitySingle(
+                                HNAP_fileIdentifier, [
+                                    schema_ref["73"]['CKAN API property']
+                                ],
+                                language_str.split(",")
+                            )
 
                         json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
                         json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
