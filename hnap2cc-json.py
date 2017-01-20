@@ -78,12 +78,13 @@ Either stream HNAP in or supply a file
 # re-procssing must continue to the current day.
 input_data_blocks = []
 active_input_block = ''
+
 for line in input_file:
     if not line.strip():
         continue
     if active_input_block == '':
         active_input_block += line
-    elif re.search('^<\?xml', line):
+    elif re.search(r'^<\?xml', line):
         input_data_blocks.append(active_input_block)
         active_input_block = line
     else:
@@ -142,6 +143,8 @@ iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
 def main():
     output_jl = "harvested_records.jl"
     output_err = "harvested_record_errors.csv"
+    num_rejects = 0
+    num_view_on_map = 0
 
     # Is there a specified start date
     if arguments['-e']:
@@ -1312,7 +1315,9 @@ def main():
                 "gmd:CI_OnlineResource")
 
             resource_no = 0
+
             for resource in record_resources:
+
                 resource_no += 1
 
                 json_record_resource = {}
@@ -1482,8 +1487,11 @@ def main():
                 json_record['resources'].append(json_record_resource)
 
             #json_record[schema_ref["81"]['CKAN API property']] = can_be_used_in_RAMP
+            view_on_map = ""
             if can_be_used_in_RAMP:
                 json_record['display_flags'].append('fgp_viewer')
+                view_on_map = " [ View on Map ]"
+                num_view_on_map += 1
 
 
             ##################################################
@@ -1495,11 +1503,12 @@ def main():
             # Append to list of Datasets                     #
             #                                                #
             ##################################################
-
+            
             if HNAP_fileIdentifier in error_records:
-                print "Reject: "+str(HNAP_fileIdentifier)
-            else:
-                print "Accept: "+str(HNAP_fileIdentifier)
+                print "\x1b[0;37;41m Reject: \x1b[0m "+str(HNAP_fileIdentifier) + view_on_map
+                num_rejects += 1
+            else:         
+                print "\x1b[0;37;42m Accept: \x1b[0m "+str(HNAP_fileIdentifier) + view_on_map
                 json_record['imso_approval'] = 'true'
                 json_record['ready_to_publish'] = 'true'
                 json_record['state'] = 'active'
@@ -1513,13 +1522,9 @@ def main():
             #                                                #
             ##################################################
 
-
-
-
-
-    print ""
-    print "Creating import JSON Lines file"
-    print ""
+    if len(json_records) > 0:
+        print ""
+        print "Generating Common Core JSON file for import to CKAN...",
 
     # Write JSON Lines to files
     output = codecs.open(output_jl, 'w', 'utf-8')
@@ -1534,10 +1539,23 @@ def main():
         #print utf_8_output
         output.write(utf_8_output+"\n")
     output.close()
-
-    # Write JSON Lines to files
-    print "Total ERRS:"+str(len(error_output))
+    
+    if len(json_records) > 0:
+        print "Done!"
+        print ""
+        print "* Number of records accepted: "+str(len(json_records))
+        print ""
+        print "* Number of records rejected: "+str(num_rejects)
+        print ""
+        print "* Number with view on map:    "+str(num_view_on_map)
+        print ""
+        print "* Number of errors logged:    "+str(len(error_output)) + " [ harvested_record_errors.csv | harvested_record_errors.html ]"
+        print ""
+    
+    # Write errors to logs
     output = codecs.open(output_err, 'w', 'utf-8')
+    if len(error_output) > 0:
+        output.write('"id","field","description","value"'+u"\n")
     for error in error_output:
         #output.write(unicode(error+"\n", 'utf-8'))
         output.write(error+u"\n")
