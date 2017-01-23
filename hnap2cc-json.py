@@ -78,7 +78,6 @@ Either stream HNAP in or supply a file
 # re-procssing must continue to the current day.
 input_data_blocks = []
 active_input_block = ''
-
 for line in input_file:
     if not line.strip():
         continue
@@ -975,13 +974,22 @@ def main():
                     first_full_triplet = vala+','+valb+','+valc
                     json_record[schema_ref["56"]['CKAN API property']] = first_full_triplet
                     break
-
+            
+            # if the triplet is not complete then fail over to just the mandatory HNAP requirement
             if first_full_triplet == '':
-                reportError(
-                    HNAP_fileIdentifier,[
-                        schema_ref["56"]['CKAN API property'],
-                        'Complete triplet not found'
-                    ])
+
+                rs_identifier = fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56a"])
+
+                if len(rs_identifier) > 0:
+
+                    first_full_triplet = rs_identifier+','+fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56b"])+','+fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56c"])
+                
+                if first_full_triplet == '':
+                    reportError(
+                        HNAP_fileIdentifier,[
+                            schema_ref["56"]['CKAN API property'],
+                            'Complete triplet not found'
+                        ])
 
 # CC::OpenMaps-57 Distributor (English)
 
@@ -1315,9 +1323,7 @@ def main():
                 "gmd:CI_OnlineResource")
 
             resource_no = 0
-
             for resource in record_resources:
-
                 resource_no += 1
 
                 json_record_resource = {}
@@ -1363,7 +1369,10 @@ def main():
                                 languages_out.append('fr')
                             if language.strip() == 'zxx': # Non linguistic
                                 languages_out.append('zxx')
-                        language_str = ','.join(languages_out)
+                        # language_str = ','.join(languages_out)
+                        language_str = []
+                        for langStr in languages_out:
+                            language_str.append(langStr)
 
                         json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
                         json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
@@ -1503,11 +1512,11 @@ def main():
             # Append to list of Datasets                     #
             #                                                #
             ##################################################
-            
+
             if HNAP_fileIdentifier in error_records:
                 print "\x1b[0;37;41m Reject: \x1b[0m "+str(HNAP_fileIdentifier) + view_on_map
                 num_rejects += 1
-            else:         
+            else:
                 print "\x1b[0;37;42m Accept: \x1b[0m "+str(HNAP_fileIdentifier) + view_on_map
                 json_record['imso_approval'] = 'true'
                 json_record['ready_to_publish'] = 'true'
@@ -1539,7 +1548,7 @@ def main():
         #print utf_8_output
         output.write(utf_8_output+"\n")
     output.close()
-    
+
     if len(json_records) > 0:
         print "Done!"
         print ""
@@ -1551,11 +1560,8 @@ def main():
         print ""
         print "* Number of errors logged:    "+str(len(error_output)) + " [ harvested_record_errors.csv | harvested_record_errors.html ]"
         print ""
-    
-    # Write errors to logs
+ 
     output = codecs.open(output_err, 'w', 'utf-8')
-    if len(error_output) > 0:
-        output.write('"id","field","description","value"'+u"\n")
     for error in error_output:
         #output.write(unicode(error+"\n", 'utf-8'))
         output.write(error+u"\n")
@@ -1702,19 +1708,6 @@ def fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref):
         tmp = fetchXMLValues(
             record,
             schema_ref["FGP XPATH"])
-
-        # HACK
-        # HNAP supports multiple projections, Common Core does not. 
-        # Take the first projection offered by the catalogue for now.
-
-        # TODO
-        #  Edit CKAN Common Core schema so that:
-        #       a. 56b & 56c are not mandatory
-        #       b. 56a, 56b, & 56c can have multiple values
-        if "56a" in schema_ref['Property ID'] or "56b" in schema_ref['Property ID'] or "56c" in schema_ref['Property ID']:
-            if len(tmp) > 1:
-                tmp = [tmp[0]]
-
     elif schema_ref['Value Type'] == 'attribute':
         tmp = fetchXMLAttribute(
             record,
@@ -2153,8 +2146,8 @@ GC_Registry_of_Applied_Terms = {
     'Defence Construction Canada'                                                                                                                                    : [u'Defence Construction Canada',u'DCC',u'Construction de Défense Canada',u'CDC',u'28'],
     'Department of Finance Canada'                                                                                                                                   : [u'Department of Finance Canada',u'FIN',u'Ministère des Finances Canada',u'FIN',u'157'],
     'Department of Justice Canada'                                                                                                                                   : [u'Department of Justice Canada',u'JUS',u'Ministère de la Justice Canada',u'JUS',u'119'],
-    'Destination Canada'                                                                                                                                             : [u'Destination Canada',u'  DC',u'Destination Canada',u'  DC',u'178'],
-    'Destination Canada'                                                                                                                                             : [u'Destination Canada',u'  DC',u'Destination Canada',u'  DC',u'178'],
+    'Destination Canada'                                                                                                                                             : [u'Destination Canada',u'  DC',u'Destination Canada',u'  DC',u'178'],
+    'Destination Canada'                                                                                                                                             : [u'Destination Canada',u'  DC',u'Destination Canada',u'  DC',u'178'],
     'Défense nationale'                                                                                                                                              : [u'National Defence',u'DND',u'Défense nationale',u'MDN',u'32'],
     'Economic Development Agency of Canada for the Regions of Quebec'                                                                                                : [u'Economic Development Agency of Canada for the Regions of Quebec',u'CED',u'Agence de développement économique du Canada pour les régions du Québec',u'DEC',u'93'],
     'Elections Canada'                                                                                                                                               : [u'Elections Canada',u'elections',u'Élections Canada',u'elections',u'285'],
@@ -2893,3 +2886,4 @@ OGP_catalogueType = {
 if __name__ == "__main__":
     arguments = docopt.docopt(__doc__)
     sys.exit(main())
+    
