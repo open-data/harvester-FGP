@@ -1344,15 +1344,6 @@ def main():
                                 languages_out.append('zxx')
                         language_str = ','.join(languages_out)
 
-                        # HACK check against schema for bilingual language_str
-                        if schema_ref["73"]['Occurrences'] == 'S':
-                            sanitySingle(
-                                HNAP_fileIdentifier, [
-                                    schema_ref["73"]['CKAN API property']
-                                ],
-                                language_str.split(",")
-                            )
-
                         json_record_resource[schema_ref["69"]['CKAN API property']] = res_contentType.strip().lower()
                         json_record_resource[schema_ref["70"]['CKAN API property']] = res_format.strip()
                         json_record_resource[schema_ref["73"]['CKAN API property']] = language_str
