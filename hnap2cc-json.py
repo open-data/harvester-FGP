@@ -945,22 +945,43 @@ def main():
 
 # CC::OpenMaps-56 Reference System Information
 
-            vala = valb = valc = ''
+            # Allow for multiple refrence definitions
+            # Updated implementation mimics prior behaviour.
+            possible_refrences = fetchXMLArray(
+                record,
+                schema_ref["56"]['FGP XPATH'])
 
-            # code
-            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56a"])
-            if value:
-                vala = value
-            # codeSpace
-            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56b"])
-            if value:
-                valb = value
-            # version
-            value = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["56c"])
-            if value:
-                valc = value
+            first_full_triplet = ''
+            for possible_refrence in possible_refrences:
+                vala = valb = valc = ''
 
-            json_record[schema_ref["56"]['CKAN API property']] = vala + ',' + valb + ',' + valc
+                # code
+                value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56a"])
+                if value:
+                    vala = value
+                # codeSpace
+                value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56b"])
+                if value:
+                    valb = value
+                # version
+                value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56c"])
+                if value:
+                    valc = value
+
+                # Apply your business logic, this is the same logic as before assuming a single projection
+                # If this is to become multiple projections the property needs to be changed into an array
+                # in the schema and _then_ in CKAN.
+                if vala != '' and valb != '' and valc != '':
+                    first_full_triplet = vala+','+valb+','+valc
+                    json_record[schema_ref["56"]['CKAN API property']] = first_full_triplet
+                    break
+
+            if first_full_triplet == '':
+                reportError(
+                    HNAP_fileIdentifier,[
+                        schema_ref["56"]['CKAN API property'],
+                        'Complete triplet not found'
+                    ])
 
 # CC::OpenMaps-57 Distributor (English)
 
