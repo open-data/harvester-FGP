@@ -779,6 +779,13 @@ def main():
                     if east:
                         west = fetch_FGP_value(record, HNAP_fileIdentifier, schema_ref["41w"])
                         if west:
+
+                            # ensure we have proper numbers
+                            north = [float(north[0]) if '.' in north[0] else int(north[0])]
+                            east = [float(east[0]) if '.' in east[0] else int(east[0])]
+                            south = [float(south[0]) if '.' in south[0] else int(south[0])]
+                            west = [float(west[0]) if '.' in west[0] else int(west[0])]
+
                             GeoJSON = {}
                             GeoJSON['type'] = "Polygon"
                             GeoJSON['coordinates'] = [[
@@ -950,46 +957,53 @@ def main():
                 record,
                 schema_ref["56"]['FGP XPATH'])
 
-            first_full_triplet = ''
-            for possible_refrence in possible_refrences:
-                vala = valb = valc = ''
+            if len(possible_refrences) == 0:
+                reportError(
+                    HNAP_fileIdentifier,[
+                        schema_ref["56"]['CKAN API property'],
+                        'No projection information found'
+                    ])
+            else:
+                first_full_triplet = ''
+                for possible_refrence in possible_refrences:
+                    vala = valb = valc = ''
 
-                # code
-                value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56a"])
-                if value:
-                    vala = value
-                # codeSpace
-                value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56b"])
-                if value:
-                    valb = value
-                # version
-                value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56c"])
-                if value:
-                    valc = value
+                    # code
+                    value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56a"])
+                    if value:
+                        vala = value
+                    # codeSpace
+                    value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56b"])
+                    if value:
+                        valb = value
+                    # version
+                    value = fetch_FGP_value(possible_refrence, HNAP_fileIdentifier, schema_ref["56c"])
+                    if value:
+                        valc = value
 
-                # Apply your business logic, this is the same logic as before assuming a single projection
-                # If this is to become multiple projections the property needs to be changed into an array
-                # in the schema and _then_ in CKAN.
-                if vala != '' and valb != '' and valc != '':
-                    first_full_triplet = vala+','+valb+','+valc
-                    json_record[schema_ref["56"]['CKAN API property']] = first_full_triplet
-                    break
-            
-            # if the triplet is not complete then fail over to just the mandatory HNAP requirement
-            if first_full_triplet == '':
-
-                rs_identifier = fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56a"])
-
-                if len(rs_identifier) > 0:
-
-                    first_full_triplet = rs_identifier+','+fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56b"])+','+fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56c"])
+                    # Apply your business logic, this is the same logic as before assuming a single projection
+                    # If this is to become multiple projections the property needs to be changed into an array
+                    # in the schema and _then_ in CKAN.
+                    if vala != '' and valb != '' and valc != '':
+                        first_full_triplet = vala+','+valb+','+valc
+                        json_record[schema_ref["56"]['CKAN API property']] = first_full_triplet
+                        break
                 
+                # if the triplet is not complete then fail over to just the mandatory HNAP requirement
                 if first_full_triplet == '':
-                    reportError(
-                        HNAP_fileIdentifier,[
-                            schema_ref["56"]['CKAN API property'],
-                            'Complete triplet not found'
-                        ])
+
+                    rs_identifier = fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56a"])
+
+                    if len(rs_identifier) > 0:
+
+                        first_full_triplet = rs_identifier+','+fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56b"])+','+fetch_FGP_value(possible_refrences[0], HNAP_fileIdentifier, schema_ref["56c"])
+                    
+                    if first_full_triplet == '':
+                        reportError(
+                            HNAP_fileIdentifier,[
+                                schema_ref["56"]['CKAN API property'],
+                                'Complete triplet not found'
+                            ])
 
 # CC::OpenMaps-57 Distributor (English)
 
@@ -1169,9 +1183,11 @@ def main():
                         termsValue = []
                     else:
                         spatialRepresentationType_array.append(termsValue[0])
+            
+            # json_record[schema_ref["62"]['CKAN API property']] = ','.join(
+            # spatialRepresentationType_array)
 
-            json_record[schema_ref["62"]['CKAN API property']] = ','.join(
-                spatialRepresentationType_array)
+            json_record[schema_ref["62"]['CKAN API property']] = spatialRepresentationType_array
 
 # CC::OpenMaps-63 Jurisdiction
 # TBS 2016-04-13: Not in HNAP, but can we default text to ‘Federal’ / ‘Fédéral
@@ -1562,6 +1578,8 @@ def main():
         print ""
  
     output = codecs.open(output_err, 'w', 'utf-8')
+    if len(error_output) > 0:
+        output.write('"id","field","description","value"'+u"\n")
     for error in error_output:
         #output.write(unicode(error+"\n", 'utf-8'))
         output.write(error+u"\n")
