@@ -29,7 +29,9 @@ if [ ! -e "run.last" ]; then
 fi
 OGS_HARVEST_LAST_RUN=$(cat run.last)
 # /bin/date --date "2 minutes ago" +"%Y-%m-%dT%H:%M:%SZ" > run.last
-date +"%Y-%m-%dT%H:%M:%SZ" > run.last
+
+# Now updating run.last after successful CKAN load
+# date +"%Y-%m-%dT%H:%M:%SZ" > run.last
 
 echo "Run starting from:"
 echo $OGS_HARVEST_LAST_RUN
@@ -41,7 +43,7 @@ echo $OGS_HARVEST_LAST_RUN
 # /home/odatsrv/_harvester_OpenMaps/harvest_hnap.py -f $OGS_HARVEST_LAST_RUN > harvested_records.xml
 ./harvest_hnap.py -f $OGS_HARVEST_LAST_RUN > harvested_records.xml & pid=$!
 
-# show progress
+# Show progress as this can take several minutes
 spin='-\|/'
 i=0
 while kill -0 $pid 2>/dev/null
@@ -51,20 +53,31 @@ do
   sleep .1
 done
 printf "\r"
-# create the common core JSON file
+
+# Create the common core JSON file
 /bin/cat harvested_records.xml | ./hnap2cc-json.py
-# convert csv errors to html
+
+# Convert csv errors to html
 ./csv2html.py -f harvested_record_errors.csv
 
 # myfilesize=`stat -c %s harvested_records.jl` # for Linux
 myfilesize=`stat -f %z harvested_records.jl` # for OSX
 
 if [ $myfilesize = 0 ]; then
-    echo "No records, skipping load into CKAN"
+    echo "No new/updated records since last harvest, skipping load into CKAN"
 else
-    echo "Has records, loading into CKAN..."
+    echo "Found new/updated records, loading into CKAN..."
     # cd /var/www/html/open_gov/staging-portal/ckan
     # ckanapi load datasets -I ~/_harvester_OpenMaps/harvested_records.jl -c production.ini
+
+    # STAGING
+    # ckanapi load datasets -I harvested_records.jl -r http://staging.open.canada.ca/data -a CKAN_API_KEY && date +"%Y-%m-%dT%H:%M:%SZ" > run.last
+
+    # PRODUCTION
+    # ckanapi load datasets -I harvested_records.jl -r http://open.canada.ca/data -a CKAN_API_KEY && date +"%Y-%m-%dT%H:%M:%SZ" > run.last
+
+    # LOCAL TESTING
+    # to test: ckanapi load datasets -I test_upload.jl -r http://staging.open.canada.ca/data -a CKAN_API_KEY
 fi
 
 rm run.lock
